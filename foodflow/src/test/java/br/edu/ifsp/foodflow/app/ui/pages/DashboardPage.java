@@ -77,7 +77,14 @@ public class DashboardPage extends BasePage {
      * Clica na primeira mesa com status 'Disponível'.
      */
     public DashboardPage clickFirstAvailableTable() {
-        click(availableTableCard);
+        wait.until(d -> {
+            try {
+                d.findElement(availableTableCard).click();
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        });
         return this;
     }
 
