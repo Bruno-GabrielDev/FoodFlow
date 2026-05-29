@@ -3,6 +3,10 @@ package br.edu.ifsp.foodflow.app.util;
 import io.restassured.RestAssured;
 import br.edu.ifsp.foodflow.app.ui.pages.LoginPage;
 import org.openqa.selenium.WebDriver;
+import io.restassured.http.ContentType;
+import java.util.List;
+import java.util.Map;
+import static io.restassured.RestAssured.given;
 
 /**
  * Utilitário para os testes de UI.
@@ -34,5 +38,48 @@ public class UiTestHelper {
         // Aguarda redirecionamento ao dashboard antes de devolver o controle ao teste
         new LoginPage(driver).urlContains("/dashboard");
         return user;
+    }
+
+    /**
+     * Fecha todas as comandas ativas via API, liberando mesas para o próximo teste.
+     * Útil em @AfterEach de testes de UI que podem deixar comandas abertas.
+     */
+    public static void closeAllActiveOrders() {
+        try {
+            OrderTestHelper.AuthenticatedUser admin = OrderTestHelper.registerAndAuthenticate();
+
+            List<Map<String, Object>> orders = given()
+                    .header("Authorization", "Bearer " + admin.token())
+                    .when()
+                    .get("/orders")
+                    .then()
+                    .extract()
+                    .path("$");
+
+            if (orders == null || orders.isEmpty()) return;
+
+            String menuItemId = OrderTestHelper.getFirstMenuItemId(admin.token());
+
+            for (Map<String, Object> order : orders) {
+                Object orderIdObj = order.get("orderId");
+                if (orderIdObj == null) continue;
+                String orderId = orderIdObj.toString();
+
+                // Tenta adicionar item (caso a comanda esteja vazia, close exigirá item)
+                try {
+                    OrderTestHelper.addItem(admin.token(), orderId, menuItemId, admin.userId());
+                } catch (Throwable ignored) {}
+
+                // Tenta fechar
+                try {
+                    given()
+                            .header("Authorization", "Bearer " + admin.token())
+                            .contentType(ContentType.JSON)
+                            .body(Map.of("numberOfPeople", 1))
+                            .when()
+                            .post("/orders/" + orderId + "/close");
+                } catch (Throwable ignored) {}
+            }
+        } catch (Throwable ignored) {}
     }
 }

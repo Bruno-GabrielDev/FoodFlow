@@ -65,23 +65,20 @@ class OrdersUiTest extends BaseWebTest {
     @AfterEach
     void cleanupOrder() {
         try {
-            // Tenta adicionar um item (se a comanda já estiver fechada, falha silenciosamente)
             try {
                 String menuItemId = OrderTestHelper.getFirstMenuItemId(token);
                 OrderTestHelper.addItem(token, orderId, menuItemId, userId);
-            } catch (Exception ignored) {
-                // Comanda pode já ter sido fechada pelo teste ou já ter item
+            } catch (Throwable ignored) {
             }
 
-            // Tenta fechar a comanda
             given()
                     .header("Authorization", "Bearer " + token)
                     .contentType(ContentType.JSON)
                     .body(Map.of("numberOfPeople", 1))
                     .when()
                     .post("/orders/" + orderId + "/close");
-        } catch (Exception ignored) {
-            // Limpeza não deve falhar o teste
+        } catch (Throwable ignored) {
+
         }
     }
 

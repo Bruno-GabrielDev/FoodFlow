@@ -4,11 +4,17 @@ import br.edu.ifsp.foodflow.app.annotation.UiTest;
 import br.edu.ifsp.foodflow.app.ui.pages.DashboardPage;
 import br.edu.ifsp.foodflow.app.util.UiTestHelper;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.AfterEach;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Testes de UI - Tela do Dashboard")
 class DashboardUiTest extends BaseWebTest {
+
+    @AfterEach
+    void cleanupOrders() {
+        UiTestHelper.closeAllActiveOrders();
+    }
 
     @UiTest
     @DisplayName("Deve exibir o dashboard após login com sucesso")
