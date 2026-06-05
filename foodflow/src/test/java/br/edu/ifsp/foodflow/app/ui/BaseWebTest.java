@@ -4,14 +4,14 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
 
 import java.time.Duration;
 
 /**
  * Classe base para os testes de UI.
- * Configura o WebDriver do Chrome antes de cada teste e o encerra ao final.
+ * Configura o WebDriver do Firefox antes de cada teste e o encerra ao final.
  * Usa esperas implícitas mínimas; as esperas explícitas ficam nos Page Objects.
  */
 public abstract class BaseWebTest {
@@ -22,17 +22,14 @@ public abstract class BaseWebTest {
 
     @BeforeEach
     void setupDriver() {
-        WebDriverManager.chromedriver().setup();
+        WebDriverManager.firefoxdriver().setup();
 
-        ChromeOptions options = new ChromeOptions();
+        FirefoxOptions options = new FirefoxOptions();
         // Descomente a linha abaixo para rodar sem abrir a janela (headless)
-        // options.addArguments("--headless=new");
-        options.addArguments("--no-sandbox");
-        options.addArguments("--disable-dev-shm-usage");
-        options.addArguments("--remote-allow-origins=*");
+        // options.addArguments("-headless");
         options.addArguments("--window-size=1920,1080");
 
-        driver = new ChromeDriver(options);
+        driver = new FirefoxDriver(options);
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(2));
     }
 
