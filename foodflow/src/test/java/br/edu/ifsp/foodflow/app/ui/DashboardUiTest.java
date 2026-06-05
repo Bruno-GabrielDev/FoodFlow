@@ -17,7 +17,7 @@ class DashboardUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve exibir o dashboard após login com sucesso")
+    @DisplayName("UI 36: Deve exibir o dashboard após login com sucesso")
     void shouldDisplayDashboardAfterLogin() {
         UiTestHelper.loginViaUi(driver, BASE_URL);
 
@@ -26,7 +26,7 @@ class DashboardUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve listar mesas no dashboard")
+    @DisplayName("UI 37: Deve listar mesas no dashboard")
     void shouldListTables() {
         UiTestHelper.loginViaUi(driver, BASE_URL);
 
@@ -37,7 +37,7 @@ class DashboardUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve filtrar mesas por status 'Livre'")
+    @DisplayName("UI 38: Deve filtrar mesas por status 'Livre'")
     void shouldFilterByAvailable() {
         UiTestHelper.loginViaUi(driver, BASE_URL);
 
@@ -52,7 +52,7 @@ class DashboardUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve filtrar mesas por status 'Ocupada'")
+    @DisplayName("UI 39: Deve filtrar mesas por status 'Ocupada'")
     void shouldFilterByOccupied() {
         UiTestHelper.loginViaUi(driver, BASE_URL);
 
@@ -67,7 +67,7 @@ class DashboardUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve abrir o modal ao clicar em uma mesa disponível")
+    @DisplayName("UI 40: Deve abrir o modal ao clicar em uma mesa disponível")
     void shouldOpenModalOnAvailableTableClick() {
         UiTestHelper.loginViaUi(driver, BASE_URL);
 
@@ -80,7 +80,7 @@ class DashboardUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve fechar o modal ao clicar em 'Cancelar'")
+    @DisplayName("UI 41: Deve fechar o modal ao clicar em 'Cancelar'")
     void shouldCloseModalOnCancel() {
         UiTestHelper.loginViaUi(driver, BASE_URL);
 
@@ -94,7 +94,7 @@ class DashboardUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve abrir uma comanda e redirecionar para a tela de comandas")
+    @DisplayName("UI 42: Deve abrir uma comanda e redirecionar para a tela de comandas")
     void shouldOpenOrderAndNavigateToOrders() {
         UiTestHelper.loginViaUi(driver, BASE_URL);
 
@@ -108,7 +108,7 @@ class DashboardUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve navegar para a tela de comandas pelo menu lateral")
+    @DisplayName("UI 43: Deve navegar para a tela de comandas pelo menu lateral")
     void shouldNavigateToOrdersViaSidebar() {
         UiTestHelper.loginViaUi(driver, BASE_URL);
 
@@ -120,7 +120,7 @@ class DashboardUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve fazer logout e voltar para a tela de login")
+    @DisplayName("UI 44: Deve fazer logout e voltar para a tela de login")
     void shouldLogoutAndReturnToLogin() {
         UiTestHelper.loginViaUi(driver, BASE_URL);
 

@@ -83,21 +83,21 @@ class OrdersUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve exibir a tela de comandas")
+    @DisplayName("UI 27: Deve exibir a tela de comandas")
     void shouldDisplayOrdersPage() {
         OrdersPage orders = new OrdersPage(driver);
         assertTrue(orders.isAtOrdersPage(), "Deveria exibir a tela de Comandas");
     }
 
     @UiTest
-    @DisplayName("Deve listar ao menos uma comanda ativa")
+    @DisplayName("UI 28: Deve listar ao menos uma comanda ativa")
     void shouldListAtLeastOneOrder() {
         OrdersPage orders = new OrdersPage(driver);
         assertTrue(orders.countOrders() >= 1, "Deveria haver pelo menos uma comanda ativa");
     }
 
     @UiTest
-    @DisplayName("Deve abrir o modal de Adicionar Item ao clicar no botão")
+    @DisplayName("UI 29: Deve abrir o modal de Adicionar Item ao clicar no botão")
     void shouldOpenAddItemModal() {
         OrdersPage orders = new OrdersPage(driver);
         orders.clickAddItem();
@@ -105,7 +105,7 @@ class OrdersUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve adicionar um item com observação à comanda")
+    @DisplayName("UI 30: Deve adicionar um item com observação à comanda")
     void shouldAddItemWithObservation() {
         OrdersPage orders = new OrdersPage(driver);
         orders.clickAddItem()
@@ -118,7 +118,7 @@ class OrdersUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve abrir o modal de Fechar Comanda ao clicar no botão")
+    @DisplayName("UI 31: Deve abrir o modal de Fechar Comanda ao clicar no botão")
     void shouldOpenCloseOrderModal() {
         OrdersPage orders = new OrdersPage(driver);
         orders.clickCloseOrder();
@@ -126,7 +126,7 @@ class OrdersUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve cancelar o fechamento da comanda ao clicar em Cancelar")
+    @DisplayName("UI 32: Deve cancelar o fechamento da comanda ao clicar em Cancelar")
     void shouldCancelCloseOrder() {
         OrdersPage orders = new OrdersPage(driver);
         orders.clickCloseOrder();
@@ -136,7 +136,7 @@ class OrdersUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve fechar a comanda com sucesso após adicionar um item")
+    @DisplayName("UI 33: Deve fechar a comanda com sucesso após adicionar um item")
     void shouldCloseOrderSuccessfully() {
         OrdersPage orders = new OrdersPage(driver);
         orders.clickAddItem()
@@ -153,7 +153,7 @@ class OrdersUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve abrir o modal de detalhes da comanda")
+    @DisplayName("UI 34: Deve abrir o modal de detalhes da comanda")
     void shouldOpenDetailsModal() {
         OrdersPage orders = new OrdersPage(driver);
         orders.clickDetails();
@@ -161,7 +161,7 @@ class OrdersUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve navegar de volta para o dashboard pelo menu lateral")
+    @DisplayName("UI 35: Deve navegar de volta para o dashboard pelo menu lateral")
     void shouldNavigateBackToDashboard() {
         OrdersPage orders = new OrdersPage(driver);
         orders.goToDashboard();

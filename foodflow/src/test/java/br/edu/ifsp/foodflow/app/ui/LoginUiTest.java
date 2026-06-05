@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class LoginUiTest extends BaseWebTest {
 
     @UiTest
-    @DisplayName("Deve fazer login com credenciais válidas e redirecionar para o dashboard")
+    @DisplayName("UI 14: Deve fazer login com credenciais válidas e redirecionar para o dashboard")
     void shouldLoginWithValidCredentials() {
         AuthHelper.RegisteredUser user = UiTestHelper.createUserViaApi();
 
@@ -24,7 +24,7 @@ class LoginUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve exibir mensagem de erro ao tentar login com senha incorreta")
+    @DisplayName("UI 15: Deve exibir mensagem de erro ao tentar login com senha incorreta")
     void shouldShowErrorWithWrongPassword() {
         AuthHelper.RegisteredUser user = UiTestHelper.createUserViaApi();
 
@@ -35,7 +35,7 @@ class LoginUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve exibir mensagem de erro ao tentar login com usuário inexistente")
+    @DisplayName("UI 16: Deve exibir mensagem de erro ao tentar login com usuário inexistente")
     void shouldShowErrorWithNonExistentUser() {
         LoginPage loginPage = new LoginPage(driver).open(BASE_URL);
         loginPage.login("usuario_que_nao_existe_123", "qualquer");
@@ -44,7 +44,7 @@ class LoginUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve permanecer na tela de login ao submeter sem preencher os campos")
+    @DisplayName("UI 17: Deve permanecer na tela de login ao submeter sem preencher os campos")
     void shouldStayOnLoginWhenFieldsAreEmpty() {
         LoginPage loginPage = new LoginPage(driver).open(BASE_URL);
         loginPage.clickLogin();
@@ -54,7 +54,7 @@ class LoginUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve navegar para a tela de cadastro ao clicar no link")
+    @DisplayName("UI 18: Deve navegar para a tela de cadastro ao clicar no link")
     void shouldNavigateToRegister() {
         LoginPage loginPage = new LoginPage(driver).open(BASE_URL);
         loginPage.goToRegister();

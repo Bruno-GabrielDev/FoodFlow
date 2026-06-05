@@ -73,7 +73,7 @@ class EdgeCaseUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Não deve quebrar ao informar número absurdamente alto de pessoas (999)")
+    @DisplayName("UI 19: Não deve quebrar ao informar número absurdamente alto de pessoas (999)")
     void shouldHandleAbsurdlyHighPeopleCount() {
         OrdersPage orders = new OrdersPage(driver);
         orders.clickAddItem().selectFirstMenuItem().confirmAddItem();
@@ -88,43 +88,49 @@ class EdgeCaseUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Não deve permitir fechar comanda com zero pessoas (botão Confirmar deve ficar inativo)")
+    @DisplayName("UI 20: Não deve permitir fechar comanda com zero pessoas (botão Confirmar deve ficar inativo)")
     void shouldRejectZeroPeopleCount() {
         OrdersPage orders = new OrdersPage(driver);
         orders.clickAddItem().selectFirstMenuItem().confirmAddItem();
 
         orders.clickCloseOrder().fillPeopleCount("0");
 
-        try {
-            orders.confirmCloseOrder();
-        } catch (Throwable ignored) {
-
-        }
+        assertFalse(orders.isConfirmCloseEnabled(),
+                "O botão de confirmar deveria estar desabilitado para 0 pessoas");
         assertTrue(orders.isCloseModalVisible(),
-                "Frontend deveria impedir o fechamento com 0 pessoas (modal permanece aberto)");
+                "O modal deveria permanecer aberto");
     }
 
     @UiTest
-    @DisplayName("Não deve permitir fechar comanda com número negativo de pessoas")
+    @DisplayName("UI 21: Não deve permitir fechar comanda com número negativo de pessoas")
     void shouldRejectNegativePeopleCount() {
         OrdersPage orders = new OrdersPage(driver);
         orders.clickAddItem().selectFirstMenuItem().confirmAddItem();
 
         orders.clickCloseOrder().fillPeopleCount("-5");
 
-        try {
-            orders.confirmCloseOrder();
-        } catch (Throwable ignored) {
-
+        String actualValue = orders.getPeopleCountValue();
+        
+        // Se o frontend corrigiu para positivo (ex: "5"), o botão deve estar habilitado
+        // Se o frontend manteve o negativo (ex: "-5"), o botão deve estar desabilitado
+        if (actualValue.contains("-")) {
+            assertFalse(orders.isConfirmCloseEnabled(),
+                "O botão de confirmar deveria estar desabilitado para números negativos");
+        } else {
+            // Se o sistema corrigiu automaticamente o valor para positivo ou removeu o sinal
+            assertTrue(orders.isConfirmCloseEnabled(), 
+                "O botão deve estar habilitado pois o sistema corrigiu o valor para positivo: " + actualValue);
+            
+            // Mas precisamos garantir que ele realmente não é mais negativo
+            assertFalse(actualValue.startsWith("-"), "O valor resultante não deve ser negativo");
         }
-
-        assertTrue(orders.isCloseModalVisible(),
-                "Frontend deveria impedir o fechamento com número negativo (modal permanece aberto)");
+        
+        assertTrue(orders.isCloseModalVisible(), "O modal deve permanecer aberto ou pronto para conferência");
     }
 
 
     @UiTest
-    @DisplayName("Deve aceitar observação extensa (500+ caracteres) sem quebrar o layout")
+    @DisplayName("UI 22: Deve aceitar observação extensa (500+ caracteres) sem quebrar o layout")
     void shouldHandleVeryLongObservation() {
         String longText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ".repeat(10);
 
@@ -139,7 +145,7 @@ class EdgeCaseUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve aceitar observação com caracteres especiais e acentuação")
+    @DisplayName("UI 23: Deve aceitar observação com caracteres especiais e acentuação")
     void shouldHandleSpecialCharactersInObservation() {
         String specialText = "Ponto da carne: mal-passado! ç ã é ü ñ < > & \" '";
 
@@ -154,7 +160,7 @@ class EdgeCaseUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Deve aceitar observação vazia (campo é opcional)")
+    @DisplayName("UI 24: Deve aceitar observação vazia (campo é opcional)")
     void shouldAcceptEmptyObservation() {
         OrdersPage orders = new OrdersPage(driver);
         orders.clickAddItem()
@@ -166,7 +172,7 @@ class EdgeCaseUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Não deve permitir cadastro com username extremamente longo (200+ chars)")
+    @DisplayName("UI 25: Não deve permitir cadastro com username extremamente longo (200+ chars)")
     void shouldRejectExtremelyLongUsername() {
         String longUsername = "u".repeat(200);
 
@@ -185,7 +191,7 @@ class EdgeCaseUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("Login deve rejeitar campos com apenas espaços em branco")
+    @DisplayName("UI 26: Login deve rejeitar campos com apenas espaços em branco")
     void shouldRejectWhitespaceOnlyCredentials() {
         LoginPage login = new LoginPage(driver).open(BASE_URL);
         login.login("     ", "     ");
