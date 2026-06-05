@@ -140,8 +140,20 @@ public class OrdersPage extends BasePage {
         return this;
     }
 
+    public String getPeopleCountValue() {
+        return driver.findElement(peopleCountInput).getAttribute("value");
+    }
+
     public void confirmCloseOrder() {
         click(confirmCloseButton);
+    }
+
+    public boolean isConfirmCloseEnabled() {
+        try {
+            return driver.findElement(confirmCloseButton).isEnabled();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public void cancelCloseOrder() {
