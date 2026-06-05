@@ -1,5 +1,6 @@
 package br.edu.ifsp.foodflow.app.suites;
 
+import br.edu.ifsp.foodflow.app.util.DbTestHelper;
 import org.junit.platform.suite.api.IncludeTags;
 import org.junit.platform.suite.api.SelectPackages;
 import org.junit.platform.suite.api.Suite;
@@ -14,4 +15,8 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @SelectPackages("br.edu.ifsp.foodflow.app.ui")
 @IncludeTags("UiTest")
 public class UiTestSuite {
+    static {
+        // Reseta o banco de dados antes de iniciar qualquer teste da suite
+        DbTestHelper.resetDatabase();
+    }
 }
