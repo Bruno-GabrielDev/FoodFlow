@@ -88,7 +88,7 @@ class EdgeCaseUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("UI 20: Não deve permitir fechar comanda com zero pessoas (botão Confirmar deve ficar inativo)")
+    @DisplayName("UI 20: Não deve permitir fechar comanda com zero pessoas")
     void shouldRejectZeroPeopleCount() {
         OrdersPage orders = new OrdersPage(driver);
         orders.clickAddItem().selectFirstMenuItem().confirmAddItem();
@@ -111,17 +111,12 @@ class EdgeCaseUiTest extends BaseWebTest {
 
         String actualValue = orders.getPeopleCountValue();
         
-        // Se o frontend corrigiu para positivo (ex: "5"), o botão deve estar habilitado
-        // Se o frontend manteve o negativo (ex: "-5"), o botão deve estar desabilitado
         if (actualValue.contains("-")) {
             assertFalse(orders.isConfirmCloseEnabled(),
                 "O botão de confirmar deveria estar desabilitado para números negativos");
         } else {
-            // Se o sistema corrigiu automaticamente o valor para positivo ou removeu o sinal
             assertTrue(orders.isConfirmCloseEnabled(), 
                 "O botão deve estar habilitado pois o sistema corrigiu o valor para positivo: " + actualValue);
-            
-            // Mas precisamos garantir que ele realmente não é mais negativo
             assertFalse(actualValue.startsWith("-"), "O valor resultante não deve ser negativo");
         }
         
@@ -185,7 +180,6 @@ class EdgeCaseUiTest extends BaseWebTest {
                 "WAITER"
         );
 
-        // Deve permanecer em /register (rejeição) ou exibir mensagem de erro
         assertTrue(register.urlContains("/register") || register.urlContains("/login"),
                 "Sistema deveria tratar username extremamente longo");
     }

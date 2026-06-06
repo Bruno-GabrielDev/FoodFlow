@@ -25,75 +25,41 @@ class OrdersUiTest extends BaseWebTest {
     private String userId;
     private String orderId;
 
-    /**
-     * Antes de cada teste: registra usuário, loga via UI (sessão no browser),
-     * abre uma comanda via API (já guarda orderId) e navega para /orders.
-     */
     @BeforeEach
     void prepareOrder() {
-        // Login UI - garante que o browser tenha a sessão/token no localStorage
         AuthHelper.RegisteredUser user = UiTestHelper.loginViaUi(driver, BASE_URL);
-
-        // Login via API para obter token + userId
-        Response loginResponse = given()
-                .contentType(ContentType.JSON)
+        Response loginResponse = given().contentType(ContentType.JSON)
                 .body(Map.of("username", user.username(), "password", user.password()))
-                .when()
-                .post("/auth/login")
-                .then()
-                .statusCode(200)
-                .extract()
-                .response();
+                .when().post("/auth/login").then().statusCode(200).extract().response();
 
         this.token = loginResponse.path("token");
         this.userId = loginResponse.path("userId");
-
-        // Abre comanda via API (mais rápido e confiável que via UI)
-        int table = OrderTestHelper.getAvailableTableNumber(token);
-        this.orderId = OrderTestHelper.openOrder(token, table, userId);
-
-        // Navega o browser para /orders
+        this.orderId = OrderTestHelper.openOrder(token, OrderTestHelper.getAvailableTableNumber(token), userId);
         driver.navigate().to(BASE_URL + "/orders");
         new OrdersPage(driver).urlContains("/orders");
     }
 
-    /**
-     * Depois de cada teste: garante que a comanda seja fechada via API,
-     * liberando a mesa para o próximo teste. Adiciona um item se preciso
-     * (close de comanda vazia retorna 422).
-     */
     @AfterEach
     void cleanupOrder() {
         try {
             try {
-                String menuItemId = OrderTestHelper.getFirstMenuItemId(token);
-                OrderTestHelper.addItem(token, orderId, menuItemId, userId);
-            } catch (Throwable ignored) {
-            }
-
-            given()
-                    .header("Authorization", "Bearer " + token)
-                    .contentType(ContentType.JSON)
-                    .body(Map.of("numberOfPeople", 1))
-                    .when()
-                    .post("/orders/" + orderId + "/close");
-        } catch (Throwable ignored) {
-
-        }
+                OrderTestHelper.addItem(token, orderId, OrderTestHelper.getFirstMenuItemId(token), userId);
+            } catch (Throwable ignored) {}
+            given().header("Authorization", "Bearer " + token).contentType(ContentType.JSON)
+                    .body(Map.of("numberOfPeople", 1)).when().post("/orders/" + orderId + "/close");
+        } catch (Throwable ignored) {}
     }
 
     @UiTest
     @DisplayName("UI 27: Deve exibir a tela de comandas")
     void shouldDisplayOrdersPage() {
-        OrdersPage orders = new OrdersPage(driver);
-        assertTrue(orders.isAtOrdersPage(), "Deveria exibir a tela de Comandas");
+        assertTrue(new OrdersPage(driver).isAtOrdersPage(), "Deveria exibir a tela de Comandas");
     }
 
     @UiTest
     @DisplayName("UI 28: Deve listar ao menos uma comanda ativa")
     void shouldListAtLeastOneOrder() {
-        OrdersPage orders = new OrdersPage(driver);
-        assertTrue(orders.countOrders() >= 1, "Deveria haver pelo menos uma comanda ativa");
+        assertTrue(new OrdersPage(driver).countOrders() >= 1, "Deveria haver pelo menos uma comanda ativa");
     }
 
     @UiTest
@@ -108,13 +74,8 @@ class OrdersUiTest extends BaseWebTest {
     @DisplayName("UI 30: Deve adicionar um item com observação à comanda")
     void shouldAddItemWithObservation() {
         OrdersPage orders = new OrdersPage(driver);
-        orders.clickAddItem()
-                .selectFirstMenuItem()
-                .fillObservations(faker.lorem().sentence(3))
-                .confirmAddItem();
-
-        assertFalse(orders.isAddItemModalVisible(),
-                "O modal deveria ter sido fechado após lançar o item");
+        orders.clickAddItem().selectFirstMenuItem().fillObservations(faker.lorem().sentence(3)).confirmAddItem();
+        assertFalse(orders.isAddItemModalVisible(), "O modal deveria ter sido fechado após lançar o item");
     }
 
     @UiTest
@@ -129,26 +90,17 @@ class OrdersUiTest extends BaseWebTest {
     @DisplayName("UI 32: Deve cancelar o fechamento da comanda ao clicar em Cancelar")
     void shouldCancelCloseOrder() {
         OrdersPage orders = new OrdersPage(driver);
-        orders.clickCloseOrder();
-        orders.cancelCloseOrder();
-        assertFalse(orders.isCloseModalVisible(),
-                "O modal de Fechar Comanda deveria ter sido fechado");
+        orders.clickCloseOrder().cancelCloseOrder();
+        assertFalse(orders.isCloseModalVisible(), "O modal de Fechar Comanda deveria ter sido fechado");
     }
 
     @UiTest
     @DisplayName("UI 33: Deve fechar a comanda com sucesso após adicionar um item")
     void shouldCloseOrderSuccessfully() {
         OrdersPage orders = new OrdersPage(driver);
-        orders.clickAddItem()
-                .selectFirstMenuItem()
-                .confirmAddItem();
-
-        orders.clickCloseOrder()
-                .fillPeopleCount("2")
-                .confirmCloseOrder();
-
-        assertTrue(orders.isCloseSuccessVisible(),
-                "Deveria exibir a tela de sucesso após fechar a comanda");
+        orders.clickAddItem().selectFirstMenuItem().confirmAddItem();
+        orders.clickCloseOrder().fillPeopleCount("2").confirmCloseOrder();
+        assertTrue(orders.isCloseSuccessVisible(), "Deveria exibir a tela de sucesso após fechar a comanda");
         orders.finalizeCloseSuccess();
     }
 
@@ -165,7 +117,6 @@ class OrdersUiTest extends BaseWebTest {
     void shouldNavigateBackToDashboard() {
         OrdersPage orders = new OrdersPage(driver);
         orders.goToDashboard();
-        boolean navigated = orders.urlContains("/dashboard");
-        assertTrue(navigated, "Deveria voltar para o /dashboard pelo link da sidebar");
+        assertTrue(orders.urlContains("/dashboard"), "Deveria voltar para o /dashboard pelo link da sidebar");
     }
 }

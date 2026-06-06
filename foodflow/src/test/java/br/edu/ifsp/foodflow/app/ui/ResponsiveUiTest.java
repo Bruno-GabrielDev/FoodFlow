@@ -17,96 +17,72 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Testes de UI - Responsividade")
 class ResponsiveUiTest extends BaseWebTest {
 
-    // Tamanhos de viewport baseados em dispositivos reais
     private static final Dimension MOBILE = new Dimension(375, 667);
     private static final Dimension TABLET = new Dimension(768, 1024);
     private static final Dimension DESKTOP = new Dimension(1920, 1080);
 
     @UiTest
-    @DisplayName("Login deve ser renderizado e usável em viewport mobile (375x667)")
+    @DisplayName("UI 45: Login deve ser renderizado e usável em viewport mobile (375x667)")
     void shouldRenderLoginOnMobile() {
         driver.manage().window().setSize(MOBILE);
-
         LoginPage login = new LoginPage(driver).open(BASE_URL);
-        assertTrue(login.isAtLoginPage(),
-                "A tela de login deveria ser visível em viewport mobile");
+        assertTrue(login.isAtLoginPage(), "A tela de login deveria ser visível em viewport mobile");
     }
 
     @UiTest
-    @DisplayName("Login deve ser renderizado em viewport tablet (768x1024)")
+    @DisplayName("UI 46: Login deve ser renderizado em viewport tablet (768x1024)")
     void shouldRenderLoginOnTablet() {
         driver.manage().window().setSize(TABLET);
-
         LoginPage login = new LoginPage(driver).open(BASE_URL);
-        assertTrue(login.isAtLoginPage(),
-                "A tela de login deveria ser visível em viewport tablet");
+        assertTrue(login.isAtLoginPage(), "A tela de login deveria ser visível em viewport tablet");
     }
 
     @UiTest
-    @DisplayName("Dashboard deve listar mesas em viewport mobile")
+    @DisplayName("UI 47: Dashboard deve listar mesas em viewport mobile")
     void shouldListTablesOnMobile() {
         driver.manage().window().setSize(MOBILE);
         UiTestHelper.loginViaUi(driver, BASE_URL);
-
-        DashboardPage dashboard = new DashboardPage(driver);
-        assertTrue(dashboard.countVisibleTables() > 0,
-                "Mesas deveriam ser listadas mesmo em viewport mobile");
+        assertTrue(new DashboardPage(driver).countVisibleTables() > 0, "Mesas deveriam ser listadas mesmo em viewport mobile");
     }
 
     @UiTest
-    @DisplayName("Dashboard deve listar mesas em viewport tablet")
+    @DisplayName("UI 48: Dashboard deve listar mesas em viewport tablet")
     void shouldListTablesOnTablet() {
         driver.manage().window().setSize(TABLET);
         UiTestHelper.loginViaUi(driver, BASE_URL);
-
-        DashboardPage dashboard = new DashboardPage(driver);
-        assertTrue(dashboard.countVisibleTables() > 0,
-                "Mesas deveriam ser listadas em viewport tablet");
+        assertTrue(new DashboardPage(driver).countVisibleTables() > 0, "Mesas deveriam ser listadas em viewport tablet");
     }
 
     @UiTest
-    @DisplayName("Dashboard deve listar mesas em viewport desktop")
+    @DisplayName("UI 49: Dashboard deve listar mesas em viewport desktop")
     void shouldListTablesOnDesktop() {
         driver.manage().window().setSize(DESKTOP);
         UiTestHelper.loginViaUi(driver, BASE_URL);
-
-        DashboardPage dashboard = new DashboardPage(driver);
-        assertTrue(dashboard.countVisibleTables() > 0,
-                "Mesas deveriam ser listadas em viewport desktop");
+        assertTrue(new DashboardPage(driver).countVisibleTables() > 0, "Mesas deveriam ser listadas em viewport desktop");
     }
 
     @UiTest
-    @DisplayName("Quantidade de mesas exibidas deve ser igual entre desktop e mobile")
+    @DisplayName("UI 50: Quantidade de mesas exibidas deve ser igual entre desktop e mobile")
     void shouldShowSameDataOnAllViewports() {
         UiTestHelper.loginViaUi(driver, BASE_URL);
         DashboardPage dashboard = new DashboardPage(driver);
-
         driver.manage().window().setSize(DESKTOP);
         int desktopCount = dashboard.countVisibleTables();
-
         driver.manage().window().setSize(MOBILE);
         int mobileCount = dashboard.countVisibleTables();
-
-        assertEquals(desktopCount, mobileCount,
-                "A quantidade de mesas exibidas deveria ser a mesma — apenas o layout muda");
+        assertEquals(desktopCount, mobileCount, "A quantidade de mesas exibidas deveria ser a mesma");
     }
 
     @UiTest
-    @DisplayName("Layout deve se adaptar ao redimensionar a tela em tempo real")
+    @DisplayName("UI 51: Layout deve se adaptar ao redimensionar a tela em tempo real")
     void shouldAdaptOnRuntimeResize() {
         UiTestHelper.loginViaUi(driver, BASE_URL);
         DashboardPage dashboard = new DashboardPage(driver);
-
         driver.manage().window().setSize(DESKTOP);
-        assertTrue(dashboard.isAtDashboardPage(),
-                "Dashboard deveria continuar acessível em desktop");
-
+        assertTrue(dashboard.isAtDashboardPage(), "Dashboard deveria continuar acessível em desktop");
         driver.manage().window().setSize(MOBILE);
-        assertTrue(dashboard.isAtDashboardPage(),
-                "Dashboard deveria continuar acessível após mudar para mobile");
-
+        assertTrue(dashboard.isAtDashboardPage(), "Dashboard deveria continuar acessível após mudar para mobile");
         driver.manage().window().setSize(TABLET);
-        assertTrue(dashboard.isAtDashboardPage(),
-                "Dashboard deveria continuar acessível após mudar para tablet");
+        assertTrue(dashboard.isAtDashboardPage(), "Dashboard deveria continuar acessível após mudar para tablet");
     }
 }

@@ -52,7 +52,7 @@ class SecurityUiTest extends BaseWebTest {
         ((JavascriptExecutor) driver).executeScript("window.localStorage.clear();");
         driver.navigate().to(BASE_URL + "/orders");
         LoginPage login = new LoginPage(driver);
-        assertTrue(login.urlContains("/login"), "Após limpar o localStorage, o usuário deveria ser redirecionado para o login");
+        assertTrue(login.urlContains("/login"), "Após limpar o localStorage, o usuário deveria ser redirecionado para le login");
     }
 
     @UiTest
