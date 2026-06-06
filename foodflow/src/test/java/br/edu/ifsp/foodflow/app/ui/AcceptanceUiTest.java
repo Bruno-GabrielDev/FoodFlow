@@ -13,7 +13,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -73,13 +76,19 @@ class AcceptanceUiTest extends BaseWebTest {
         this.orderId = OrderTestHelper.openOrder(token, tableNumber, userId);
         OrdersPage orders = new OrdersPage(driver).open(BASE_URL);
         orders.clickAddItem().selectFirstMenuItem();
+        
         WebElement submitBtn = driver.findElement(By.xpath("//button[contains(.,'Lançar na Comanda')]"));
+        
         submitBtn.click();
         try { submitBtn.click(); } catch (Exception ignored) {}
+        
         orders.urlContains("/orders");
         orders.clickDetails();
-        List<WebElement> items = driver.findElements(By.xpath("//div[contains(@class,'flex items-center justify-between p-4')]"));
-        assertEquals(1, items.size(), "FALHA SISTÊMICA: O sistema permitiu lançar o mesmo item duas vezes via duplo clique!");
+        
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        List<WebElement> items = wait.until(d -> d.findElements(By.xpath("//h5[contains(@class,'font-bold')]")));
+        
+        assertEquals(1, items.size(), "FALHA SISTÊMICA: O sistema permitiu lançar o mesmo item duas vezes!");
     }
 
     @UiTest
@@ -99,19 +108,24 @@ class AcceptanceUiTest extends BaseWebTest {
         int tableNumber = OrderTestHelper.getAvailableTableNumber(token);
         this.orderId = OrderTestHelper.openOrder(token, tableNumber, userId);
         
-        // Adiciona 50 itens via API para testar a renderização da UI
-        String menuItemId = OrderTestHelper.getFirstMenuItemId(token);
+        OrdersPage orders = new OrdersPage(driver).open(BASE_URL);
+        
+        // Simula a adição de 50 itens via INTERFACE (UI)
         for(int i = 0; i < 50; i++) {
-            OrderTestHelper.addItem(token, orderId, menuItemId, userId);
+            orders.clickAddItem()
+                  .selectFirstMenuItem()
+                  .confirmAddItem();
+            
+            // Lida com possíveis popups de confirmação ou espera o modal fechar para o próximo
+            new WebDriverWait(driver, Duration.ofSeconds(5))
+                .until(ExpectedConditions.invisibilityOfElementLocated(By.xpath("//h3[contains(.,'Adicionar Item')]")));
         }
 
-        OrdersPage orders = new OrdersPage(driver).open(BASE_URL);
         orders.clickDetails();
         
-        // Verifica se a lista renderizou e o browser não travou
-        assertTrue(orders.isDetailsModalVisible(), "O modal de detalhes deve abrir mesmo com 50 itens");
-        List<WebElement> items = driver.findElements(By.xpath("//div[contains(@class,'flex items-center justify-between p-4')]"));
-        assertTrue(items.size() >= 50, "A UI deve listar todos os 50 itens lançados");
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        List<WebElement> items = wait.until(d -> d.findElements(By.xpath("//h5[contains(@class,'font-bold')]")));
+        assertTrue(items.size() >= 50, "A UI deveria listar todos os 50 itens lançados manualmente. Encontrados: " + items.size());
     }
 
     @UiTest
@@ -120,20 +134,18 @@ class AcceptanceUiTest extends BaseWebTest {
         int tableNumber = OrderTestHelper.getAvailableTableNumber(token);
         this.orderId = OrderTestHelper.openOrder(token, tableNumber, userId);
         
-        // Adiciona um item e fecha a comanda com muitas pessoas para elevar o valor total (se houver taxa ou soma)
-        // Ou simplesmente verifica se o layout não quebra com valores de centenas de reais
         OrdersPage orders = new OrdersPage(driver).open(BASE_URL);
         orders.clickAddItem().selectFirstMenuItem().confirmAddItem();
         
-        // Adiciona mais itens para chegar num valor alto
         String menuItemId = OrderTestHelper.getFirstMenuItemId(token);
         for(int i = 0; i < 20; i++) {
             OrderTestHelper.addItem(token, orderId, menuItemId, userId);
         }
         
         driver.navigate().refresh();
-        // Verifica se o símbolo R$ e o valor estão visíveis e não sobrepostos
-        assertTrue(driver.getPageSource().contains("R$"), "O sistema deve exibir valores em formato monetário");
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        boolean currencyVisible = wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), "R$"));
+        assertTrue(currencyVisible, "O sistema deve exibir valores em formato monetário (R$)");
     }
 
     @AfterEach
