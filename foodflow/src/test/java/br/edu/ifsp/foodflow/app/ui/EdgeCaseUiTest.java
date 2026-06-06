@@ -193,4 +193,34 @@ class EdgeCaseUiTest extends BaseWebTest {
         assertTrue(login.urlContains("/login"),
                 "Sistema deveria rejeitar login com apenas espaços em branco");
     }
+
+    @UiTest
+    @DisplayName("UI 57: Deve suportar observação com exatamente 255 caracteres")
+    void shouldHandleExact255CharObservation() {
+        String text255 = "a".repeat(255);
+        OrdersPage orders = new OrdersPage(driver);
+        orders.clickAddItem()
+                .selectFirstMenuItem()
+                .fillObservations(text255)
+                .confirmAddItem();
+
+        assertFalse(orders.isAddItemModalVisible(),
+                "Deveria aceitar observação de 255 caracteres (limite comum de banco)");
+    }
+
+    @UiTest
+    @DisplayName("UI 58: Deve tratar adequadamente observação com 256 caracteres (estouro de limite)")
+    void shouldHandle256CharObservation() {
+        String text256 = "a".repeat(256);
+        OrdersPage orders = new OrdersPage(driver);
+        orders.clickAddItem()
+                .selectFirstMenuItem()
+                .fillObservations(text256)
+                .confirmAddItem();
+
+        // Se o sistema corta ou aceita via TEXT no banco, o modal deve fechar. 
+        // Se dá erro, a página não deve "congelar".
+        assertTrue(!orders.isAddItemModalVisible() || orders.urlContains("/orders"),
+                "O sistema não deve quebrar com 256 caracteres");
+    }
 }

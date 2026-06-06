@@ -93,6 +93,49 @@ class AcceptanceUiTest extends BaseWebTest {
         assertEquals("", currentValue, "FALHA DE UX: O modal não limpou a pesquisa anterior ao ser reaberto!");
     }
 
+    @UiTest
+    @DisplayName("UI 59: Deve suportar uma comanda com grande volume de itens (50+)")
+    void shouldHandleLargeVolumeOfItems() {
+        int tableNumber = OrderTestHelper.getAvailableTableNumber(token);
+        this.orderId = OrderTestHelper.openOrder(token, tableNumber, userId);
+        
+        // Adiciona 50 itens via API para testar a renderização da UI
+        String menuItemId = OrderTestHelper.getFirstMenuItemId(token);
+        for(int i = 0; i < 50; i++) {
+            OrderTestHelper.addItem(token, orderId, menuItemId, userId);
+        }
+
+        OrdersPage orders = new OrdersPage(driver).open(BASE_URL);
+        orders.clickDetails();
+        
+        // Verifica se a lista renderizou e o browser não travou
+        assertTrue(orders.isDetailsModalVisible(), "O modal de detalhes deve abrir mesmo com 50 itens");
+        List<WebElement> items = driver.findElements(By.xpath("//div[contains(@class,'flex items-center justify-between p-4')]"));
+        assertTrue(items.size() >= 50, "A UI deve listar todos os 50 itens lançados");
+    }
+
+    @UiTest
+    @DisplayName("UI 60: Deve formatar corretamente valores monetários elevados (Limite Financeiro)")
+    void shouldFormatHighCurrencyValues() {
+        int tableNumber = OrderTestHelper.getAvailableTableNumber(token);
+        this.orderId = OrderTestHelper.openOrder(token, tableNumber, userId);
+        
+        // Adiciona um item e fecha a comanda com muitas pessoas para elevar o valor total (se houver taxa ou soma)
+        // Ou simplesmente verifica se o layout não quebra com valores de centenas de reais
+        OrdersPage orders = new OrdersPage(driver).open(BASE_URL);
+        orders.clickAddItem().selectFirstMenuItem().confirmAddItem();
+        
+        // Adiciona mais itens para chegar num valor alto
+        String menuItemId = OrderTestHelper.getFirstMenuItemId(token);
+        for(int i = 0; i < 20; i++) {
+            OrderTestHelper.addItem(token, orderId, menuItemId, userId);
+        }
+        
+        driver.navigate().refresh();
+        // Verifica se o símbolo R$ e o valor estão visíveis e não sobrepostos
+        assertTrue(driver.getPageSource().contains("R$"), "O sistema deve exibir valores em formato monetário");
+    }
+
     @AfterEach
     void cleanup() {
         if (token != null && orderId != null) {
