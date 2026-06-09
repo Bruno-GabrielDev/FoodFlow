@@ -84,11 +84,9 @@ class AcceptanceUiTest extends BaseWebTest {
         
         orders.urlContains("/orders");
         orders.clickDetails();
-        
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        List<WebElement> items = wait.until(d -> d.findElements(By.xpath("//h5[contains(@class,'font-bold')]")));
-        
-        assertEquals(1, items.size(), "FALHA SISTÊMICA: O sistema permitiu lançar o mesmo item duas vezes!");
+        // Itens dentro do modal "Detalhes da Comanda" são divs com estas três classes.
+        List<WebElement> items = driver.findElements(By.cssSelector("div.rounded-2xl.bg-gray-50.space-y-2"));
+        assertEquals(1, items.size(), "FALHA SISTÊMICA: O sistema permitiu lançar o mesmo item duas vezes via duplo clique!");
     }
 
     @UiTest
