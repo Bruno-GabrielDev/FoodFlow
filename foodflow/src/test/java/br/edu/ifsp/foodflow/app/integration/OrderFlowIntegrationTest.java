@@ -194,6 +194,67 @@ class OrderFlowIntegrationTest {
     }
 
     @IntegrationTest
+    @DisplayName("Avanços de status do item devem permanecer nas consultas da comanda")
+    void shouldPersistOrderItemStatusTransitions() {
+        int table = OrderTestHelper.getAvailableTableNumber(token);
+        orderId = OrderTestHelper.openOrder(token, table, userId);
+        String menuItemId = OrderTestHelper.getFirstMenuItemId(token);
+        String orderItemId = OrderTestHelper.addItemAndReturnId(
+                token,
+                orderId,
+                table,
+                menuItemId,
+                userId
+        );
+        Map<String, String> requestBody = Map.of("itemId", orderItemId);
+        String itemStatusPath = "items.find { it.id == '" + orderItemId + "' }.status";
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/orders/tables/" + table + "/order")
+                .then()
+                .statusCode(200)
+                .body(itemStatusPath, equalTo("PENDING"));
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+                .when()
+                .post("/orders/" + orderId + "/advance-status")
+                .then()
+                .statusCode(200)
+                .body("status", equalTo("PREPARATION"));
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/orders/tables/" + table + "/order")
+                .then()
+                .statusCode(200)
+                .body(itemStatusPath, equalTo("PREPARATION"));
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+                .when()
+                .post("/orders/" + orderId + "/advance-status")
+                .then()
+                .statusCode(200)
+                .body("status", equalTo("FINISHED"));
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/orders/tables/" + table + "/order")
+                .then()
+                .statusCode(200)
+                .body(itemStatusPath, equalTo("FINISHED"));
+    }
+
+    @IntegrationTest
     @DisplayName("Fluxo de cálculo: comanda com subtotal baixo (< R$100) não recebe desconto")
     void shouldApplyZeroDiscountForLowSubtotal() {
         int table = OrderTestHelper.getAvailableTableNumber(token);
