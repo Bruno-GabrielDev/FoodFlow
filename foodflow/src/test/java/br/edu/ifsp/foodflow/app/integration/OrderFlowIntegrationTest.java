@@ -359,6 +359,47 @@ class OrderFlowIntegrationTest {
     }
 
     @IntegrationTest
+    @DisplayName("Comanda fechada não deve permanecer na listagem de comandas ativas")
+    void shouldRemoveClosedOrderFromActiveQueries() {
+        int closedOrderTable = OrderTestHelper.getAvailableTableNumber(token);
+        String closedOrderId = OrderTestHelper.openOrder(token, closedOrderTable, userId);
+        String menuItemId = OrderTestHelper.getFirstMenuItemId(token);
+        OrderTestHelper.addItem(token, closedOrderId, menuItemId, userId);
+
+        int activeOrderTable = OrderTestHelper.getAvailableTableNumber(token);
+        String activeOrderId = OrderTestHelper.openOrder(token, activeOrderTable, userId);
+        orderId = activeOrderId;
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(Map.of("numberOfPeople", 1))
+                .when()
+                .post("/orders/" + closedOrderId + "/close")
+                .then()
+                .statusCode(200)
+                .body("orderId", equalTo(closedOrderId));
+
+        List<String> activeOrderIds = given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/orders")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("orderId");
+
+        assertFalse(
+                activeOrderIds.contains(closedOrderId),
+                "A comanda fechada não deve aparecer na consulta de comandas ativas"
+        );
+        assertTrue(
+                activeOrderIds.contains(activeOrderId),
+                "A consulta deve continuar retornando comandas que permanecem ativas"
+        );
+    }
+
+    @IntegrationTest
     @DisplayName("Fluxo de cálculo: comanda com subtotal baixo (< R$100) não recebe desconto")
     void shouldApplyZeroDiscountForLowSubtotal() {
         int table = OrderTestHelper.getAvailableTableNumber(token);
