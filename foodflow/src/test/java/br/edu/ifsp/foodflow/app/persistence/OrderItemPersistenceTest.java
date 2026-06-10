@@ -2,7 +2,9 @@ package br.edu.ifsp.foodflow.app.persistence;
 
 import br.edu.ifsp.foodflow.app.annotation.PersistenceTest;
 import br.edu.ifsp.foodflow.app.domain.orderItem.OrderItemStatus;
+import br.edu.ifsp.foodflow.app.infra.persistence.entity.AddOnJpaEntity;
 import br.edu.ifsp.foodflow.app.infra.persistence.entity.OrderItemJpaEntity;
+import br.edu.ifsp.foodflow.app.infra.persistence.repository.springdata.SpringDataAddOnRepository;
 import br.edu.ifsp.foodflow.app.infra.persistence.repository.springdata.SpringDataMenuItemRepository;
 import br.edu.ifsp.foodflow.app.infra.persistence.repository.springdata.SpringDataOrderItemRepository;
 import br.edu.ifsp.foodflow.app.infra.persistence.repository.springdata.SpringDataOrderRepository;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,9 +32,16 @@ class OrderItemPersistenceTest extends BasePersistenceTest {
             UUID.fromString("d4e5f6a7-b8c9-0123-defa-234567890123");
     private static final UUID WAITER_ID =
             UUID.fromString("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
+    private static final UUID BACON_ADD_ON_ID =
+            UUID.fromString("c9d0e1f2-a3b4-5678-cdef-789012345678");
+    private static final UUID CHEDDAR_ADD_ON_ID =
+            UUID.fromString("a3b4c5d6-e7f8-9012-abcd-123456789012");
 
     @Autowired
     private SpringDataOrderItemRepository orderItemRepository;
+
+    @Autowired
+    private SpringDataAddOnRepository addOnRepository;
 
     @Autowired
     private SpringDataOrderRepository orderRepository;
@@ -107,5 +117,37 @@ class OrderItemPersistenceTest extends BasePersistenceTest {
         assertThat(pendingItems)
                 .isNotEmpty()
                 .allMatch(item -> item.getStatus() == OrderItemStatus.PENDING);
+    }
+
+    @PersistenceTest
+    @Transactional
+    @DisplayName("Deve persistir os adicionais do item da comanda")
+    void shouldPersistOrderItemAddOns() {
+        LocalDateTime now = LocalDateTime.now();
+        List<AddOnJpaEntity> addOns = addOnRepository.findAllById(
+                List.of(BACON_ADD_ON_ID, CHEDDAR_ADD_ON_ID)
+        );
+        OrderItemJpaEntity orderItem = new OrderItemJpaEntity(
+                null,
+                orderRepository.getReferenceById(ORDER_ID),
+                menuItemRepository.getReferenceById(MENU_ITEM_ID),
+                userRepository.getReferenceById(WAITER_ID),
+                addOns,
+                "Com adicionais",
+                OrderItemStatus.PENDING,
+                44.90,
+                now,
+                now
+        );
+
+        UUID orderItemId = orderItemRepository.saveAndFlush(orderItem).getId();
+        entityManager.clear();
+
+        OrderItemJpaEntity persistedOrderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow();
+
+        assertThat(persistedOrderItem.getAdditions())
+                .extracting(AddOnJpaEntity::getId)
+                .containsExactlyInAnyOrder(BACON_ADD_ON_ID, CHEDDAR_ADD_ON_ID);
     }
 }
