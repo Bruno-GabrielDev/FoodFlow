@@ -145,32 +145,8 @@ class SecurityUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("UI 09: Deve impedir IDOR (Garçom A tentando manipular comanda do Garçom B)")
-    void shouldPreventIdorAttackBetweenWaiters() {
-        OrderTestHelper.AuthenticatedUser waiterA = OrderTestHelper.registerAndAuthenticate();
-        String orderIdA = OrderTestHelper.openOrder(waiterA.token(), OrderTestHelper.getAvailableTableNumber(waiterA.token()), waiterA.userId());
-
-        AuthHelper.RegisteredUser waiterBData = UiTestHelper.loginViaUi(driver, BASE_URL);
-        Response loginB = given().contentType(ContentType.JSON)
-                .body(Map.of("username", waiterBData.username(), "password", waiterBData.password()))
-                .when().post("/auth/login").then().extract().response();
-
-        String tokenB = loginB.path("token");
-        String userIdB = loginB.path("userId");
-
-        Response attack = given().header("Authorization", "Bearer " + tokenB).contentType(ContentType.JSON)
-                .body(Map.of("menuItemId", OrderTestHelper.getFirstMenuItemId(waiterA.token()), "quantity", 1, "waiterId", userIdB))
-                .when().post("/orders/" + orderIdA + "/items");
-
-        assertNotEquals(201, attack.getStatusCode(), "VULNERABILIDADE DETECTADA: Garçom B conseguiu manipular comanda do Garçom A!");
-
-        OrderTestHelper.addItem(waiterA.token(), orderIdA, OrderTestHelper.getFirstMenuItemId(waiterA.token()), waiterA.userId());
-        given().header("Authorization", "Bearer " + waiterA.token()).contentType(ContentType.JSON).body(Map.of("numberOfPeople", 1)).post("/orders/" + orderIdA + "/close");
-    }
-
-    @UiTest
     @IssueTest
-    @DisplayName("UI 62: IDOR - garçom B insere item na comanda do garçom A (demonstração ISSUE-01)")
+    @DisplayName("UI 09: IDOR - garçom B insere item na comanda do garçom A (ISSUE-01)")
     void shouldDemonstrateIdorByInjectingItemInAnotherWaitersOrder() {
         final By itemAlterado = By.xpath("//p[contains(.,'<ALTERADO>')]");
 
