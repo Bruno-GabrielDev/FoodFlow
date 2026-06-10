@@ -30,6 +30,19 @@ class UserPersistenceTest extends BasePersistenceTest {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
+    @PersistenceTest
+    @Transactional
+    @DisplayName("Deve rejeitar dois usuários com o mesmo email")
+    void shouldRejectUsersWithSameEmail() {
+        UserJpaEntity firstUser = createUser("primeiro_usuario", "email_repetido@test.com");
+        UserJpaEntity secondUser = createUser("segundo_usuario", "email_repetido@test.com");
+
+        userRepository.saveAndFlush(firstUser);
+
+        assertThatThrownBy(() -> userRepository.saveAndFlush(secondUser))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
     private UserJpaEntity createUser(String username, String email) {
         return new UserJpaEntity(
                 null,
