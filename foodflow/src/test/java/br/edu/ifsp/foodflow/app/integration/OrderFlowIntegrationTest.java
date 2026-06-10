@@ -93,9 +93,10 @@ class OrderFlowIntegrationTest {
         int table = OrderTestHelper.getAvailableTableNumber(token);
         orderId = OrderTestHelper.openOrder(token, table, userId);
 
-        // BUG REAL — issue #73 no repositório original:
-        // backend retorna HTTP 500 ao tentar abrir uma segunda comanda na mesma mesa.
-        // Esperado: erro de negócio tratado (400/409/422) com mensagem clara.
+        // BUG #73: o backend deveria retornar 4xx (erro de negócio tratado),
+        // mas retorna 500 (Internal Server Error). Este teste exige o comportamento
+        // CORRETO — vai falhar enquanto o bug existir, sinalizando que precisa ser corrigido.
+        // Issue: https://github.com/fereziniNi/FoodFlow/issues/73
         given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
@@ -103,7 +104,7 @@ class OrderFlowIntegrationTest {
                 .when()
                 .post("/orders/" + table + "/open")
                 .then()
-                .statusCode(anyOf(is(400), is(409), is(422), is(500)));
+                .statusCode(anyOf(is(400), is(409), is(422)));
     }
 
     @IntegrationTest
