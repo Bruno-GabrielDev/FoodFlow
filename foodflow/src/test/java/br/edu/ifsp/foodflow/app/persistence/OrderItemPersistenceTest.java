@@ -97,4 +97,15 @@ class OrderItemPersistenceTest extends BasePersistenceTest {
         assertThatThrownBy(() -> orderItemRepository.saveAndFlush(orderItem))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
+
+    @PersistenceTest
+    @Transactional
+    @DisplayName("Deve filtrar itens da comanda pelo status")
+    void shouldFindOrderItemsByStatus() {
+        var pendingItems = orderItemRepository.findByStatus(OrderItemStatus.PENDING);
+
+        assertThat(pendingItems)
+                .isNotEmpty()
+                .allMatch(item -> item.getStatus() == OrderItemStatus.PENDING);
+    }
 }
