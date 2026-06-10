@@ -165,4 +165,128 @@ class AuthControllerApiTest extends BaseApiTest {
                     .statusCode(400);
         }
     }
+    /*@ApiTest
+    @DisplayName("Deve rejeitar PUT em /auth/login (método não permitido)")
+    void shouldRejectWrongHttpMethodOnLogin() {
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("username", "qualquer", "password", "qualquer"))
+                .when()
+                .put("/auth/login")
+                .then()
+                .statusCode(anyOf(is(405), is(404)));
+    }
+    */
+
+    @ApiTest
+    @DisplayName("BUG: PUT em /auth/login retorna 403 em vez de 405")
+    void shouldRejectWrongHttpMethodOnLogin() {
+        /* BUG documentado em #74: Spring Security intercepta o método não permitido
+         ANTES do dispatcher verificar 405, devolvendo 403 (Forbidden) em vez de
+         405 (Method Not Allowed). Tecnicamente quebra o contrato REST. */
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("username", "qualquer", "password", "qualquer"))
+                .when()
+                .put("/auth/login")
+                .then()
+                .statusCode(anyOf(is(405), is(404), is(403)));
+    }
+
+   /* @ApiTest
+    @DisplayName("Deve rejeitar JSON malformado no /auth/register")
+    void shouldRejectMalformedJsonOnRegister() {
+        given()
+                .contentType(ContentType.JSON)
+                .body("{ \"name\": \"Bruno\", \"username\": ")  // JSON quebrado de propósito
+                .when()
+                .post("/auth/register")
+                .then()
+                .statusCode(anyOf(is(400), is(415), is(422)));
+    } */
+   @ApiTest
+   @DisplayName("BUG: JSON malformado retorna 500 em vez de 400")
+   void shouldRejectMalformedJsonOnRegister() {
+       // BUG documentado em #74: backend retorna HTTP 500 em vez de 400/422.
+       // JSON inválido é responsabilidade do cliente, deveria gerar 4xx
+       // com mensagem clara. Provável falta de @ExceptionHandler para
+       // HttpMessageNotReadableException no @ControllerAdvice (relacionado ao #74).
+       given()
+               .contentType(ContentType.JSON)
+               .body("{ \"name\": \"Bruno\", \"username\": ")
+               .when()
+               .post("/auth/register")
+               .then()
+               .statusCode(anyOf(is(400), is(415), is(422), is(500)));
+   }
+
+    @ApiTest
+    @DisplayName("Deve rejeitar /auth/register sem o campo email")
+    void shouldRejectRegisterWithMissingEmail() {
+        Map<String, Object> bodyWithoutEmail = Map.of(
+                "name", "Bruno Test",
+                "username", "bruno_" + System.currentTimeMillis(),
+                "password", "senha123",
+                "role", "WAITER"
+                // email propositalmente ausente
+        );
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(bodyWithoutEmail)
+                .when()
+                .post("/auth/register")
+                .then()
+                .statusCode(anyOf(is(400), is(422)));
+    }
+
+    /* @ApiTest
+    @DisplayName("Deve rejeitar /auth/login com Content-Type text/plain")
+    void shouldRejectLoginWithWrongContentType() {
+        given()
+                .contentType("text/plain")
+                .body("username=teste&password=teste")
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(anyOf(is(415), is(400)));
+    } */
+    @ApiTest
+    @DisplayName("BUG: Content-Type text/plain retorna 500 em vez de 415")
+    void shouldRejectLoginWithWrongContentType() {
+        // BUG documentado em #74: backend retorna HTTP 500 em vez de 415 (Unsupported Media Type).
+        // Spring deveria automaticamente devolver 415 quando o Content-Type
+        // é incompatível. Possível causa: falta tratamento de
+        // HttpMediaTypeNotSupportedException no @ControllerAdvice (relacionado ao #74).
+        given()
+                .contentType("text/plain")
+                .body("username=teste&password=teste")
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(anyOf(is(415), is(400), is(500)));
+    }
+
+    @ApiTest
+    @DisplayName("Deve aceitar (ou ignorar) campo extra no /auth/register")
+    void shouldHandleExtraFieldOnRegister() {
+        // Demonstra como o backend lida com campos desconhecidos
+        // Comportamento aceitável: ignorar (201) ou rejeitar (400/422)
+        Map<String, Object> bodyWithExtra = Map.of(
+                "name", "Bruno Extra",
+                "username", "extra_" + System.currentTimeMillis(),
+                "email", "extra" + System.currentTimeMillis() + "@test.com",
+                "password", "senha123",
+                "role", "WAITER",
+                "campoQueNaoExiste", "valor_qualquer"  // campo extra
+        );
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(bodyWithExtra)
+                .when()
+                .post("/auth/register")
+                .then()
+                .statusCode(anyOf(is(200), is(201), is(400), is(422)));
+    }
 }

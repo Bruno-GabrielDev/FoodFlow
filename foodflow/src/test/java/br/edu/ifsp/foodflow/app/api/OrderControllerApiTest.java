@@ -47,6 +47,86 @@ class OrderControllerApiTest extends BaseApiTest {
         openedOrders.clear();
     }
 
+    @ApiTest
+    @DisplayName("Deve rejeitar GET /orders com token JWT inválido")
+    void shouldRejectInvalidJwtToken() {
+        given()
+                .header("Authorization", "Bearer token_falso_que_nao_existe.parte2.parte3")
+                .when()
+                .get("/orders")
+                .then()
+                .statusCode(anyOf(is(401), is(403)));
+    }
+
+    @ApiTest
+    @DisplayName("Valores limites: tableId inválido (0, negativo, inexistente) deve falhar")
+    void shouldRejectInvalidTableIds() {
+        AuthenticatedUser user = OrderTestHelper.registerAndAuthenticate();
+
+        // tableId = 0 (limite inferior)
+        given()
+                .header("Authorization", "Bearer " + user.token())
+                .contentType(ContentType.JSON)
+                .body(Map.of("waiterId", user.userId()))
+                .when()
+                .post("/orders/0/open")
+                .then()
+                .statusCode(anyOf(is(400), is(404), is(422), is(500)));
+
+        // tableId = -1 (negativo)
+        given()
+                .header("Authorization", "Bearer " + user.token())
+                .contentType(ContentType.JSON)
+                .body(Map.of("waiterId", user.userId()))
+                .when()
+                .post("/orders/-1/open")
+                .then()
+                .statusCode(anyOf(is(400), is(404), is(422), is(500)));
+
+        // tableId = 99999 (inexistente, extremo)
+        given()
+                .header("Authorization", "Bearer " + user.token())
+                .contentType(ContentType.JSON)
+                .body(Map.of("waiterId", user.userId()))
+                .when()
+                .post("/orders/99999/open")
+                .then()
+                .statusCode(anyOf(is(400), is(404), is(422), is(500)));
+    }
+
+    @ApiTest
+    @DisplayName("Idempotência: fechar a mesma comanda 2x deve falhar na segunda chamada")
+    void shouldHandleClosingSameOrderTwice() {
+        AuthenticatedUser user = OrderTestHelper.registerAndAuthenticate();
+        int tableNumber = OrderTestHelper.getAvailableTableNumber(user.token());
+        String orderId = OrderTestHelper.openOrder(user.token(), tableNumber, user.userId());
+        // Não usa openOrderTracked porque vamos fechar manualmente
+
+        // Adiciona pelo menos 1 item para poder fechar
+        String menuItemId = OrderTestHelper.getFirstMenuItemId(user.token());
+        OrderTestHelper.addItem(user.token(), orderId, menuItemId, user.userId());
+
+        // Primeiro fechamento — deve dar certo (200)
+        given()
+                .header("Authorization", "Bearer " + user.token())
+                .contentType(ContentType.JSON)
+                .body(Map.of("numberOfPeople", 1))
+                .when()
+                .post("/orders/" + orderId + "/close")
+                .then()
+                .statusCode(200);
+
+        // Segundo fechamento — deve falhar (comanda já fechada)
+        given()
+                .header("Authorization", "Bearer " + user.token())
+                .contentType(ContentType.JSON)
+                .body(Map.of("numberOfPeople", 1))
+                .when()
+                .post("/orders/" + orderId + "/close")
+                .then()
+                .statusCode(anyOf(is(400), is(404), is(409), is(422), is(500)));
+    }
+
     @Nested
     @DisplayName("POST /orders/{tableId}/open")
     class OpenOrderTests {
@@ -267,4 +347,5 @@ class OrderControllerApiTest extends BaseApiTest {
                     .statusCode(404);
         }
     }
+
 }
