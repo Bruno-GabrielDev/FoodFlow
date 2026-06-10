@@ -10,6 +10,7 @@ import br.edu.ifsp.foodflow.app.infra.persistence.repository.springdata.SpringDa
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("Testes de Persistência - Itens da Comanda")
 class OrderItemPersistenceTest extends BasePersistenceTest {
@@ -71,5 +73,28 @@ class OrderItemPersistenceTest extends BasePersistenceTest {
         assertThat(persistedOrderItem.getObservations())
                 .hasSize(255)
                 .isEqualTo(observation);
+    }
+
+    @PersistenceTest
+    @Transactional
+    @DisplayName("Deve rejeitar observação com 256 caracteres")
+    void shouldRejectObservationWith256Characters() {
+        String observation = "a".repeat(256);
+        LocalDateTime now = LocalDateTime.now();
+        OrderItemJpaEntity orderItem = new OrderItemJpaEntity(
+                null,
+                orderRepository.getReferenceById(ORDER_ID),
+                menuItemRepository.getReferenceById(MENU_ITEM_ID),
+                userRepository.getReferenceById(WAITER_ID),
+                new ArrayList<>(),
+                observation,
+                OrderItemStatus.PENDING,
+                35.90,
+                now,
+                now
+        );
+
+        assertThatThrownBy(() -> orderItemRepository.saveAndFlush(orderItem))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 }
