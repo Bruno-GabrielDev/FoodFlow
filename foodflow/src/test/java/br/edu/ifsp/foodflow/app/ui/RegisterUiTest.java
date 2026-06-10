@@ -60,4 +60,18 @@ class RegisterUiTest extends BaseWebTest {
         registerPage.goBackToLogin();
         assertTrue(registerPage.urlContains("/login"), "Deveria navegar de volta para o login");
     }
+
+    @UiTest
+    @DisplayName("UI 71: Deve cadastrar uma conta para cada cargo (Garçom, Caixa/Recepcionista e Cozinheiro)")
+    void shouldRegisterAccountForEachRole() {
+        String[] cargos = {"WAITER", "CASHIER", "COOK"};
+        for (String cargo : cargos) {
+            String suffix = uniqueSuffix();
+            RegisterPage registerPage = new RegisterPage(driver).open(BASE_URL);
+            registerPage.register(faker.name().fullName(), cargo.toLowerCase() + "_" + suffix,
+                    suffix + "@test.com", "senha123", cargo);
+            assertTrue(registerPage.urlContains("/login"),
+                    "Deveria cadastrar a conta do cargo " + cargo + " e redirecionar para o login");
+        }
+    }
 }
