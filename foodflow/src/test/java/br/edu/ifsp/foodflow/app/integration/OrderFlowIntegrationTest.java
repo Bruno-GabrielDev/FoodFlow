@@ -255,6 +255,53 @@ class OrderFlowIntegrationTest {
     }
 
     @IntegrationTest
+    @DisplayName("Remoção de item em preparação deve ser rejeitada sem alterar a comanda")
+    void shouldRejectRemovalOfItemInPreparation() {
+        int table = OrderTestHelper.getAvailableTableNumber(token);
+        orderId = OrderTestHelper.openOrder(token, table, userId);
+        String menuItemId = OrderTestHelper.getFirstMenuItemId(token);
+        String orderItemId = OrderTestHelper.addItemAndReturnId(
+                token,
+                orderId,
+                table,
+                menuItemId,
+                userId
+        );
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(Map.of("itemId", orderItemId))
+                .when()
+                .post("/orders/" + orderId + "/advance-status")
+                .then()
+                .statusCode(200)
+                .body("status", equalTo("PREPARATION"));
+
+        Response removalResponse = given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(Map.of("orderItemId", orderItemId))
+                .when()
+                .delete("/orders/" + orderId + "/items");
+
+        String itemStatusPath = "items.find { it.id == '" + orderItemId + "' }.status";
+        given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/orders/tables/" + table + "/order")
+                .then()
+                .statusCode(200)
+                .body(itemStatusPath, equalTo("PREPARATION"));
+
+        assertEquals(
+                422,
+                removalResponse.statusCode(),
+                "Remover item em preparação deve retornar erro de negócio, não erro interno"
+        );
+    }
+
+    @IntegrationTest
     @DisplayName("Fluxo de cálculo: comanda com subtotal baixo (< R$100) não recebe desconto")
     void shouldApplyZeroDiscountForLowSubtotal() {
         int table = OrderTestHelper.getAvailableTableNumber(token);
