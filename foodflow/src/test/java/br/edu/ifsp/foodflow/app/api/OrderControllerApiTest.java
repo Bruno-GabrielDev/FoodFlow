@@ -298,6 +298,30 @@ class OrderControllerApiTest extends BaseApiTest {
                     .then()
                     .statusCode(400);
         }
+
+        @ApiTest
+        @DisplayName("Deve retornar 404 ao remover item inexistente")
+        void shouldReturn404WhenRemovingNonExistentItem() {
+            AuthenticatedUser user = OrderTestHelper.registerAndAuthenticate();
+            int table = OrderTestHelper.getAvailableTableNumber(user.token());
+            String orderId = openOrderTracked(user, table);
+            String menuItemId = OrderTestHelper.getFirstMenuItemId(user.token());
+            OrderTestHelper.addItem(
+                    user.token(),
+                    orderId,
+                    menuItemId,
+                    user.userId()
+            );
+
+            given()
+                    .header("Authorization", "Bearer " + user.token())
+                    .contentType(ContentType.JSON)
+                    .body(Map.of("orderItemId", UUID.randomUUID().toString()))
+                    .when()
+                    .delete("/orders/" + orderId + "/items")
+                    .then()
+                    .statusCode(404);
+        }
     }
 
     @Nested
