@@ -158,6 +158,42 @@ class OrderFlowIntegrationTest {
     }
 
     @IntegrationTest
+    @DisplayName("Remover item pendente deve atualizar itens persistidos e total da comanda")
+    void shouldRemovePendingItemAndUpdateOrderTotal() {
+        int table = OrderTestHelper.getAvailableTableNumber(token);
+        orderId = OrderTestHelper.openOrder(token, table, userId);
+        String menuItemId = OrderTestHelper.getFirstMenuItemId(token);
+        String orderItemId = OrderTestHelper.addItemAndReturnId(
+                token,
+                orderId,
+                table,
+                menuItemId,
+                userId
+        );
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(Map.of("orderItemId", orderItemId))
+                .when()
+                .delete("/orders/" + orderId + "/items")
+                .then()
+                .statusCode(200)
+                .body("orderId", equalTo(orderId))
+                .body("total", equalTo(0f));
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/orders/tables/" + table + "/order")
+                .then()
+                .statusCode(200)
+                .body("orderId", equalTo(orderId))
+                .body("items", empty())
+                .body("total", equalTo(0f));
+    }
+
+    @IntegrationTest
     @DisplayName("Fluxo de cálculo: comanda com subtotal baixo (< R$100) não recebe desconto")
     void shouldApplyZeroDiscountForLowSubtotal() {
         int table = OrderTestHelper.getAvailableTableNumber(token);
