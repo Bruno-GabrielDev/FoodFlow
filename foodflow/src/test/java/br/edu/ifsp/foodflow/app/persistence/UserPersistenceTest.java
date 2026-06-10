@@ -9,10 +9,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("Testes de Persistência - Usuários")
 class UserPersistenceTest extends BasePersistenceTest {
+
+    private static final UUID EXISTING_USER_ID =
+            UUID.fromString("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
 
     @Autowired
     private SpringDataUserRepository userRepository;
@@ -41,6 +47,18 @@ class UserPersistenceTest extends BasePersistenceTest {
 
         assertThatThrownBy(() -> userRepository.saveAndFlush(secondUser))
                 .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @PersistenceTest
+    @Transactional
+    @DisplayName("Deve buscar usuario por username existente")
+    void shouldFindUserByExistingUsername() {
+        UserJpaEntity user = userRepository.findByUsername("joao")
+                .orElseThrow();
+
+        assertThat(user.getId()).isEqualTo(EXISTING_USER_ID);
+        assertThat(user.getUsername()).isEqualTo("joao");
+        assertThat(user.getEmail()).isEqualTo("joao@gmail.com");
     }
 
     private UserJpaEntity createUser(String username, String email) {
