@@ -357,6 +357,23 @@ class OrderControllerApiTest extends BaseApiTest {
                     .body("createdAt", notNullValue())
                     .body("updatedAt", notNullValue());
         }
+
+        @ApiTest
+        @DisplayName("Deve retornar 400 ao avancar status sem itemId")
+        void shouldReturn400WhenAdvanceItemIdIsMissing() {
+            AuthenticatedUser user = OrderTestHelper.registerAndAuthenticate();
+            int table = OrderTestHelper.getAvailableTableNumber(user.token());
+            String orderId = openOrderTracked(user, table);
+
+            given()
+                    .header("Authorization", "Bearer " + user.token())
+                    .contentType(ContentType.JSON)
+                    .body(Map.of())
+                    .when()
+                    .post("/orders/" + orderId + "/advance-status")
+                    .then()
+                    .statusCode(400);
+        }
     }
 
     @Nested
