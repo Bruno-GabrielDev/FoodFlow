@@ -325,6 +325,41 @@ class OrderControllerApiTest extends BaseApiTest {
     }
 
     @Nested
+    @DisplayName("POST /orders/{orderId}/advance-status")
+    class AdvanceOrderItemStatusTests {
+
+        @ApiTest
+        @DisplayName("Deve avancar item pendente para preparacao e retornar 200")
+        void shouldAdvancePendingItemToPreparation() {
+            AuthenticatedUser user = OrderTestHelper.registerAndAuthenticate();
+            int table = OrderTestHelper.getAvailableTableNumber(user.token());
+            String orderId = openOrderTracked(user, table);
+            String menuItemId = OrderTestHelper.getFirstMenuItemId(user.token());
+            String orderItemId = OrderTestHelper.addItemAndReturnId(
+                    user.token(),
+                    orderId,
+                    table,
+                    menuItemId,
+                    user.userId()
+            );
+
+            given()
+                    .header("Authorization", "Bearer " + user.token())
+                    .contentType(ContentType.JSON)
+                    .body(Map.of("itemId", orderItemId))
+                    .when()
+                    .post("/orders/" + orderId + "/advance-status")
+                    .then()
+                    .statusCode(200)
+                    .body("itemId", equalTo(orderItemId))
+                    .body("orderId", equalTo(orderId))
+                    .body("status", equalTo("PREPARATION"))
+                    .body("createdAt", notNullValue())
+                    .body("updatedAt", notNullValue());
+        }
+    }
+
+    @Nested
     @DisplayName("POST /orders/{orderId}/close")
     class CloseOrderTests {
 
