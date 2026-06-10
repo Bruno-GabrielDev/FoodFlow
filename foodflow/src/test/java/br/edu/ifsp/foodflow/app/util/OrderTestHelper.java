@@ -2,8 +2,10 @@ package br.edu.ifsp.foodflow.app.util;
 
 import io.restassured.http.ContentType;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static io.restassured.RestAssured.given;
 
@@ -117,8 +119,19 @@ public class OrderTestHelper {
             String menuItemId,
             String waiterId
     ) {
+        Set<String> existingItemIds = new HashSet<>(getOrderItemIds(token, tableNumber));
+
         addItem(token, orderId, menuItemId, waiterId);
 
+        return getOrderItemIds(token, tableNumber).stream()
+                .filter(itemId -> !existingItemIds.contains(itemId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Nao foi possivel identificar o item adicionado a comanda."
+                ));
+    }
+
+    private static List<String> getOrderItemIds(String token, int tableNumber) {
         return given()
                 .header("Authorization", "Bearer " + token)
                 .when()
@@ -126,7 +139,7 @@ public class OrderTestHelper {
                 .then()
                 .statusCode(200)
                 .extract()
-                .path("items[-1].id");
+                .path("items.id");
     }
 
     /**
