@@ -302,6 +302,63 @@ class OrderFlowIntegrationTest {
     }
 
     @IntegrationTest
+    @DisplayName("Fechar comanda deve liberar a mesa para uma nova abertura")
+    void shouldReleaseTableAndAllowNewOrderAfterClosing() {
+        int table = OrderTestHelper.getAvailableTableNumber(token);
+        String firstOrderId = OrderTestHelper.openOrder(token, table, userId);
+        orderId = firstOrderId;
+        String menuItemId = OrderTestHelper.getFirstMenuItemId(token);
+        OrderTestHelper.addItem(token, firstOrderId, menuItemId, userId);
+        String tableStatusPath = "find { it.tableNumber == " + table + " }.status";
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/tables")
+                .then()
+                .statusCode(200)
+                .body(tableStatusPath, equalTo("OCCUPIED"));
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(Map.of("numberOfPeople", 1))
+                .when()
+                .post("/orders/" + firstOrderId + "/close")
+                .then()
+                .statusCode(200)
+                .body("orderId", equalTo(firstOrderId));
+
+        orderId = null;
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/tables")
+                .then()
+                .statusCode(200)
+                .body(tableStatusPath, equalTo("AVAILABLE"));
+
+        String secondOrderId = OrderTestHelper.openOrder(token, table, userId);
+        orderId = secondOrderId;
+
+        assertNotEquals(
+                firstOrderId,
+                secondOrderId,
+                "A nova abertura deve criar uma comanda diferente para a mesa liberada"
+        );
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/orders/tables/" + table + "/order")
+                .then()
+                .statusCode(200)
+                .body("orderId", equalTo(secondOrderId))
+                .body("tableNumber", equalTo(table));
+    }
+
+    @IntegrationTest
     @DisplayName("Fluxo de cálculo: comanda com subtotal baixo (< R$100) não recebe desconto")
     void shouldApplyZeroDiscountForLowSubtotal() {
         int table = OrderTestHelper.getAvailableTableNumber(token);
