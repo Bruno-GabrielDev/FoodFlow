@@ -281,6 +281,23 @@ class OrderControllerApiTest extends BaseApiTest {
                     .body("orderId", equalTo(orderId))
                     .body("total", equalTo(0f));
         }
+
+        @ApiTest
+        @DisplayName("Deve retornar 400 ao remover item sem orderItemId")
+        void shouldReturn400WhenOrderItemIdIsMissing() {
+            AuthenticatedUser user = OrderTestHelper.registerAndAuthenticate();
+            int table = OrderTestHelper.getAvailableTableNumber(user.token());
+            String orderId = openOrderTracked(user, table);
+
+            given()
+                    .header("Authorization", "Bearer " + user.token())
+                    .contentType(ContentType.JSON)
+                    .body(Map.of())
+                    .when()
+                    .delete("/orders/" + orderId + "/items")
+                    .then()
+                    .statusCode(400);
+        }
     }
 
     @Nested
