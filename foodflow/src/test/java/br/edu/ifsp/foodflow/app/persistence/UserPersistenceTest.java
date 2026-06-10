@@ -61,6 +61,16 @@ class UserPersistenceTest extends BasePersistenceTest {
         assertThat(user.getEmail()).isEqualTo("joao@gmail.com");
     }
 
+    @PersistenceTest
+    @Transactional
+    @DisplayName("Deve impedir exclusao de usuario associado a comanda")
+    void shouldRejectDeletionOfUserReferencedByOrder() {
+        assertThatThrownBy(() -> {
+            userRepository.deleteById(EXISTING_USER_ID);
+            userRepository.flush();
+        }).isInstanceOf(DataIntegrityViolationException.class);
+    }
+
     private UserJpaEntity createUser(String username, String email) {
         return new UserJpaEntity(
                 null,
