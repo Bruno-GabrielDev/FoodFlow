@@ -101,6 +101,26 @@ class OrderPersistenceTest extends BasePersistenceTest {
         }).isInstanceOf(DataIntegrityViolationException.class);
     }
 
+    @PersistenceTest
+    @Transactional
+    @DisplayName("Deve rejeitar duas comandas ativas para a mesma mesa")
+    void shouldRejectTwoActiveOrdersForSameTable() {
+        TableJpaEntity table = tableRepository.getReferenceById(TABLE_NUMBER);
+        UserJpaEntity user = userRepository.getReferenceById(USER_ID);
+        OrderJpaEntity firstActiveOrder = createOrder(table, user, true);
+        OrderJpaEntity secondActiveOrder = createOrder(table, user, true);
+
+        orderRepository.saveAndFlush(firstActiveOrder);
+        orderRepository.saveAndFlush(secondActiveOrder);
+        entityManager.clear();
+
+        long activeOrdersForTable = orderRepository.findByActiveTrue().stream()
+                .filter(order -> order.getTable().getTableNumber().equals(TABLE_NUMBER))
+                .count();
+
+        assertThat(activeOrdersForTable).isEqualTo(1);
+    }
+
     private OrderJpaEntity createOrder(
             TableJpaEntity table,
             UserJpaEntity user,
