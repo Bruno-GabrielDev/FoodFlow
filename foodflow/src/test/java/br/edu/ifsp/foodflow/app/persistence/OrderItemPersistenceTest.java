@@ -166,6 +166,16 @@ class OrderItemPersistenceTest extends BasePersistenceTest {
 
     @PersistenceTest
     @Transactional
+    @DisplayName("Deve impedir exclusao de adicional associado a item")
+    void shouldRejectDeletionOfAddOnReferencedByOrderItem() {
+        assertThatThrownBy(() -> {
+            addOnRepository.deleteById(BACON_ADD_ON_ID);
+            addOnRepository.flush();
+        }).isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @PersistenceTest
+    @Transactional
     @DisplayName("Deve preservar o preco historico do item apos alteracao no cardapio")
     void shouldPreserveStoredOrderItemPriceAfterMenuPriceChanges() {
         double historicalPrice = 44.90;
