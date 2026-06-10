@@ -1,6 +1,7 @@
 package br.edu.ifsp.foodflow.app.persistence;
 
 import br.edu.ifsp.foodflow.app.annotation.PersistenceTest;
+import br.edu.ifsp.foodflow.app.domain.order.OrderRepository;
 import br.edu.ifsp.foodflow.app.domain.orderItem.OrderItemStatus;
 import br.edu.ifsp.foodflow.app.infra.persistence.entity.AddOnJpaEntity;
 import br.edu.ifsp.foodflow.app.infra.persistence.entity.OrderItemJpaEntity;
@@ -13,6 +14,7 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -22,6 +24,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.data.Offset.offset;
 
 @DisplayName("Testes de Persistência - Itens da Comanda")
 class OrderItemPersistenceTest extends BasePersistenceTest {
@@ -36,6 +39,10 @@ class OrderItemPersistenceTest extends BasePersistenceTest {
             UUID.fromString("c9d0e1f2-a3b4-5678-cdef-789012345678");
     private static final UUID CHEDDAR_ADD_ON_ID =
             UUID.fromString("a3b4c5d6-e7f8-9012-abcd-123456789012");
+    private static final UUID ORDER_WITH_PRICED_ITEM_ID =
+            UUID.fromString("c5d6e7f8-a9b0-1234-cdef-345678901234");
+    private static final UUID PRICED_ORDER_ITEM_ID =
+            UUID.fromString("22220001-2222-2222-2222-222222222222");
 
     @Autowired
     private SpringDataOrderItemRepository orderItemRepository;
@@ -54,6 +61,12 @@ class OrderItemPersistenceTest extends BasePersistenceTest {
 
     @Autowired
     private EntityManager entityManager;
+
+    @Autowired
+    private OrderRepository domainOrderRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @PersistenceTest
     @Transactional
@@ -149,5 +162,37 @@ class OrderItemPersistenceTest extends BasePersistenceTest {
         assertThat(persistedOrderItem.getAdditions())
                 .extracting(AddOnJpaEntity::getId)
                 .containsExactlyInAnyOrder(BACON_ADD_ON_ID, CHEDDAR_ADD_ON_ID);
+    }
+
+    @PersistenceTest
+    @Transactional
+    @DisplayName("Deve preservar o preco historico do item apos alteracao no cardapio")
+    void shouldPreserveStoredOrderItemPriceAfterMenuPriceChanges() {
+        double historicalPrice = 44.90;
+        double updatedMenuItemPrice = 50.00;
+
+        jdbcTemplate.update(
+                "UPDATE menu_items SET price = ? WHERE id = ?",
+                updatedMenuItemPrice,
+                MENU_ITEM_ID
+        );
+        entityManager.clear();
+
+        Double storedPrice = jdbcTemplate.queryForObject(
+                "SELECT price FROM order_items WHERE id = ?",
+                Double.class,
+                PRICED_ORDER_ITEM_ID
+        );
+        var reloadedOrder = domainOrderRepository.findById(ORDER_WITH_PRICED_ITEM_ID)
+                .orElseThrow();
+        var reloadedOrderItem = reloadedOrder.getOrderItems().stream()
+                .filter(item -> PRICED_ORDER_ITEM_ID.equals(item.getId()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(storedPrice)
+                .isCloseTo(historicalPrice, offset(0.001));
+        assertThat(reloadedOrderItem.getPrice())
+                .isCloseTo(historicalPrice, offset(0.001));
     }
 }
