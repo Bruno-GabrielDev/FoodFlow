@@ -151,7 +151,7 @@ class OrdersUiTest extends BaseWebTest {
 
     @UiTest
     @IssueTest
-    @DisplayName("UI 64: Duplo clique em 'Lançar na Comanda' duplica o item (demonstração ISSUE-03)")
+    @DisplayName("UI 12: Duplo clique em 'Lançar na Comanda' duplica o item (ISSUE-03)")
     void shouldDuplicateItemOnDoubleClick() {
         OrdersPage orders = new OrdersPage(driver).open(BASE_URL);
         orders.clickAddItem().selectFirstMenuItem();
@@ -203,7 +203,7 @@ class OrdersUiTest extends BaseWebTest {
 
     @UiTest
     @IssueTest
-    @DisplayName("UI 65: Observação longa sem espaços transborda o card - layout (demonstração ISSUE-04)")
+    @DisplayName("UI 22: Observação longa sem espaços transborda o card - layout (ISSUE-04)")
     void shouldOverflowCardWithLongUnbrokenObservation() {
         String menuItemId = OrderTestHelper.getFirstMenuItemId(token);
         String observacaoSemEspacos = "OVERFLOW" + "A".repeat(220);

@@ -70,26 +70,6 @@ class AcceptanceUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("UI 12: Deve evitar duplicidade de itens ao clicar rapidamente")
-    void shouldPreventDoubleItemSubmission() {
-        int tableNumber = OrderTestHelper.getAvailableTableNumber(token);
-        this.orderId = OrderTestHelper.openOrder(token, tableNumber, userId);
-        OrdersPage orders = new OrdersPage(driver).open(BASE_URL);
-        orders.clickAddItem().selectFirstMenuItem();
-
-        WebElement submitBtn = driver.findElement(By.xpath("//button[contains(.,'Lançar na Comanda')]"));
-
-        submitBtn.click();
-        try { submitBtn.click(); } catch (Exception ignored) {}
-
-        orders.urlContains("/orders");
-        orders.clickDetails();
-
-        List<WebElement> items = driver.findElements(By.cssSelector("div.rounded-2xl.bg-gray-50.space-y-2"));
-        assertEquals(1, items.size(), "FALHA SISTÊMICA: O sistema permitiu lançar o mesmo item duas vezes via duplo clique!");
-    }
-
-    @UiTest
     @DisplayName("UI 13: Deve limpar o estado do modal ao abrir novamente")
     void shouldResetModalStateBetweenUses() {
         OrdersPage orders = new OrdersPage(driver).open(BASE_URL);

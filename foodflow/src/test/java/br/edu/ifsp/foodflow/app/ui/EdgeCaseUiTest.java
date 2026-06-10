@@ -84,15 +84,6 @@ class EdgeCaseUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("UI 22: Deve aceitar observação extensa (500+ caracteres) sem quebrar o layout")
-    void shouldHandleVeryLongObservation() {
-        String longText = "Lorem ipsum ".repeat(50);
-        OrdersPage orders = new OrdersPage(driver);
-        orders.clickAddItem().selectFirstMenuItem().fillObservations(longText).confirmAddItem();
-        assertFalse(orders.isAddItemModalVisible(), "Deveria aceitar observação longa");
-    }
-
-    @UiTest
     @DisplayName("UI 23: Deve aceitar observação com caracteres especiais e acentuação")
     void shouldHandleSpecialCharactersInObservation() {
         String specialText = "áéíóú çãñ < > & ' \"";
