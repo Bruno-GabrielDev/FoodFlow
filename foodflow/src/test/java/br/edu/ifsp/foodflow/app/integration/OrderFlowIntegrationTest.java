@@ -93,7 +93,7 @@ class OrderFlowIntegrationTest {
         int table = OrderTestHelper.getAvailableTableNumber(token);
         orderId = OrderTestHelper.openOrder(token, table, userId);
 
-        // BUG REAL — issue #73gi no repositório original:
+        // BUG REAL — issue #73 no repositório original:
         // backend retorna HTTP 500 ao tentar abrir uma segunda comanda na mesma mesa.
         // Esperado: erro de negócio tratado (400/409/422) com mensagem clara.
         given()

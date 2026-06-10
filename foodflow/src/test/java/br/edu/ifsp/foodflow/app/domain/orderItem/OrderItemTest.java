@@ -51,7 +51,4 @@ class OrderItemTest {
             assertThat(item.getPrice()).isEqualTo(60.0);
         }
 
-
-
-
 }

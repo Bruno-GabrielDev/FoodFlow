@@ -11,11 +11,6 @@ import org.openqa.selenium.firefox.FirefoxOptions;
 
 import java.time.Duration;
 
-/**
- * Classe base para os testes de UI.
- * Configura o WebDriver do Firefox antes de cada teste e o encerra ao final.
- * Usa esperas implícitas mínimas; as esperas explícitas ficam nos Page Objects.
- */
 public abstract class BaseWebTest {
 
     protected WebDriver driver;
@@ -24,7 +19,7 @@ public abstract class BaseWebTest {
 
     @BeforeAll
     static void resetDatabaseBeforeClass() {
-        // Reseta o banco de dados antes de iniciar os testes da classe (limpa mesas e pedidos)
+
         DbTestHelper.resetDatabase();
     }
 
@@ -33,8 +28,7 @@ public abstract class BaseWebTest {
         WebDriverManager.firefoxdriver().setup();
 
         FirefoxOptions options = new FirefoxOptions();
-        // Descomente a linha abaixo para rodar sem abrir a janela (headless)
-        // options.addArguments("-headless");
+
         options.addArguments("--window-size=1920,1080");
 
         driver = new FirefoxDriver(options);

@@ -1,6 +1,5 @@
 package br.edu.ifsp.foodflow.app.application.useCases.order;
 
-
 import br.edu.ifsp.foodflow.app.domain.exceptions.OrderItemAlreadyFinishedException;
 import br.edu.ifsp.foodflow.app.domain.exceptions.OrderItemNotFoundException;
 import br.edu.ifsp.foodflow.app.domain.exceptions.OrderNotFoundException;
@@ -62,7 +61,6 @@ class AdvanceOrderItemStatusUseCaseTest {
     @DisplayName("Testes criados com TDD")
     class tddTests {
 
-
         @Test
         @DisplayName("Dado que a comanda informada é nula, quando o garçom tentar avançar o status do item, " +
                 "então o sistema deve lançar um erro informando que a comanda não pode ser nula")
@@ -96,7 +94,6 @@ class AdvanceOrderItemStatusUseCaseTest {
             assertThatExceptionOfType(OrderItemNotFoundException.class)
                     .isThrownBy(() -> statusUseCaseTest.advanceStatus(orderId, itemId));
         }
-
 
         @Test
         @DisplayName("Dado que o status do item está como pendente, quando o garçom solicitar o avanço, " +
@@ -160,7 +157,6 @@ class AdvanceOrderItemStatusUseCaseTest {
             assertThat(response.status()).isEqualTo(OrderItemStatus.PREPARATION);
         }
 
-
     }
 
     @Nested
@@ -181,9 +177,6 @@ class AdvanceOrderItemStatusUseCaseTest {
             assertThat(otherItem.getStatus()).isEqualTo(OrderItemStatus.PENDING);
         }
 
-
-
     }
-
 
 }

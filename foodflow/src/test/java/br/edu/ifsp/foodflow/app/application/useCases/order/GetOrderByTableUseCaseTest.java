@@ -46,7 +46,6 @@ class GetOrderByTableUseCaseTest {
     @Mock
     private TableRepository tableRepository;
 
-
     @BeforeEach
     void setUp(){
         table = new Table(1);
@@ -268,6 +267,5 @@ class GetOrderByTableUseCaseTest {
             );
         }
     }
-
 
 }

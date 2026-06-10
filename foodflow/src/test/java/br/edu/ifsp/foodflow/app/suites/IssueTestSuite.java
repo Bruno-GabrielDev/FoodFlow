@@ -6,8 +6,8 @@ import org.junit.platform.suite.api.Suite;
 import org.junit.platform.suite.api.SuiteDisplayName;
 
 @Suite
-@SuiteDisplayName("Suite de Testes de Persistencia - FoodFlow")
-@SelectPackages("br.edu.ifsp.foodflow.app.persistence")
-@IncludeTags("PersistenceTest")
-public class PersistenceTestSuite {
+@SuiteDisplayName("Suite de Demonstração de Defeitos (Issues) - FoodFlow")
+@SelectPackages("br.edu.ifsp.foodflow.app.ui")
+@IncludeTags("IssueTest")
+public class IssueTestSuite {
 }
