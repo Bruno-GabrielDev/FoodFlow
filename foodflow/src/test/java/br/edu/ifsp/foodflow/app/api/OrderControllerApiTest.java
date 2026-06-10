@@ -252,6 +252,38 @@ class OrderControllerApiTest extends BaseApiTest {
     }
 
     @Nested
+    @DisplayName("DELETE /orders/{orderId}/items")
+    class RemoveItemTests {
+
+        @ApiTest
+        @DisplayName("Deve remover item pendente da comanda e retornar 200")
+        void shouldRemovePendingItemSuccessfully() {
+            AuthenticatedUser user = OrderTestHelper.registerAndAuthenticate();
+            int table = OrderTestHelper.getAvailableTableNumber(user.token());
+            String orderId = openOrderTracked(user, table);
+            String menuItemId = OrderTestHelper.getFirstMenuItemId(user.token());
+            String orderItemId = OrderTestHelper.addItemAndReturnId(
+                    user.token(),
+                    orderId,
+                    table,
+                    menuItemId,
+                    user.userId()
+            );
+
+            given()
+                    .header("Authorization", "Bearer " + user.token())
+                    .contentType(ContentType.JSON)
+                    .body(Map.of("orderItemId", orderItemId))
+                    .when()
+                    .delete("/orders/" + orderId + "/items")
+                    .then()
+                    .statusCode(200)
+                    .body("orderId", equalTo(orderId))
+                    .body("total", equalTo(0f));
+        }
+    }
+
+    @Nested
     @DisplayName("POST /orders/{orderId}/close")
     class CloseOrderTests {
 
@@ -347,5 +379,4 @@ class OrderControllerApiTest extends BaseApiTest {
                     .statusCode(404);
         }
     }
-
 }
