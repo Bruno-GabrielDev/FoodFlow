@@ -58,6 +58,36 @@ class OrderPersistenceTest extends BasePersistenceTest {
         assertThat(persistedOrder.getActive()).isTrue();
     }
 
+    @PersistenceTest
+    @Transactional
+    @DisplayName("Deve listar somente comandas ativas")
+    void shouldListOnlyActiveOrders() {
+        UserJpaEntity user = userRepository.getReferenceById(USER_ID);
+        OrderJpaEntity closedOrder = createOrder(
+                tableRepository.getReferenceById(9),
+                user,
+                false
+        );
+        OrderJpaEntity activeOrder = createOrder(
+                tableRepository.getReferenceById(10),
+                user,
+                true
+        );
+
+        UUID closedOrderId = orderRepository.saveAndFlush(closedOrder).getId();
+        UUID activeOrderId = orderRepository.saveAndFlush(activeOrder).getId();
+        entityManager.clear();
+
+        var activeOrders = orderRepository.findByActiveTrue();
+
+        assertThat(activeOrders)
+                .extracting(OrderJpaEntity::getId)
+                .contains(activeOrderId)
+                .doesNotContain(closedOrderId);
+        assertThat(activeOrders)
+                .allMatch(OrderJpaEntity::getActive);
+    }
+
     private OrderJpaEntity createOrder(
             TableJpaEntity table,
             UserJpaEntity user,
