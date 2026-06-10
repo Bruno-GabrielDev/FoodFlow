@@ -76,15 +76,15 @@ class AcceptanceUiTest extends BaseWebTest {
         this.orderId = OrderTestHelper.openOrder(token, tableNumber, userId);
         OrdersPage orders = new OrdersPage(driver).open(BASE_URL);
         orders.clickAddItem().selectFirstMenuItem();
-        
+
         WebElement submitBtn = driver.findElement(By.xpath("//button[contains(.,'Lançar na Comanda')]"));
-        
+
         submitBtn.click();
         try { submitBtn.click(); } catch (Exception ignored) {}
-        
+
         orders.urlContains("/orders");
         orders.clickDetails();
-        // Itens dentro do modal "Detalhes da Comanda" são divs com estas três classes.
+
         List<WebElement> items = driver.findElements(By.cssSelector("div.rounded-2xl.bg-gray-50.space-y-2"));
         assertEquals(1, items.size(), "FALHA SISTÊMICA: O sistema permitiu lançar o mesmo item duas vezes via duplo clique!");
     }
@@ -94,7 +94,7 @@ class AcceptanceUiTest extends BaseWebTest {
     void shouldResetModalStateBetweenUses() {
         OrdersPage orders = new OrdersPage(driver).open(BASE_URL);
         orders.clickAddItem().searchMenuItem("Coca-Cola");
-        driver.findElement(By.cssSelector("button .rotate-45")).click(); 
+        driver.findElement(By.cssSelector("button .rotate-45")).click();
         orders.clickAddItem();
         String currentValue = driver.findElement(By.cssSelector("input[placeholder*='Pesquise']")).getAttribute("value");
         assertEquals("", currentValue, "FALHA DE UX: O modal não limpou a pesquisa anterior ao ser reaberto!");
@@ -105,24 +105,24 @@ class AcceptanceUiTest extends BaseWebTest {
     void shouldHandleLargeVolumeOfItems() {
         int tableNumber = OrderTestHelper.getAvailableTableNumber(token);
         this.orderId = OrderTestHelper.openOrder(token, tableNumber, userId);
-        
+
         OrdersPage orders = new OrdersPage(driver).open(BASE_URL);
-        
-        // Simula a adição de 50 itens via INTERFACE (UI)
+
         for(int i = 0; i < 50; i++) {
             orders.clickAddItem()
                   .selectFirstMenuItem()
                   .confirmAddItem();
-            
-            // Lida com possíveis popups de confirmação ou espera o modal fechar para o próximo
+
             new WebDriverWait(driver, Duration.ofSeconds(5))
                 .until(ExpectedConditions.invisibilityOfElementLocated(By.xpath("//h3[contains(.,'Adicionar Item')]")));
         }
 
         orders.clickDetails();
-        
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
-        List<WebElement> items = wait.until(d -> d.findElements(By.xpath("//h5[contains(@class,'font-bold')]")));
+
+        new WebDriverWait(driver, Duration.ofSeconds(15))
+                .until(ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//h3[normalize-space()='Detalhes da Comanda']")));
+        List<WebElement> items = driver.findElements(By.cssSelector("div.rounded-2xl.bg-gray-50.space-y-2"));
         assertTrue(items.size() >= 50, "A UI deveria listar todos os 50 itens lançados manualmente. Encontrados: " + items.size());
     }
 
@@ -131,15 +131,15 @@ class AcceptanceUiTest extends BaseWebTest {
     void shouldFormatHighCurrencyValues() {
         int tableNumber = OrderTestHelper.getAvailableTableNumber(token);
         this.orderId = OrderTestHelper.openOrder(token, tableNumber, userId);
-        
+
         OrdersPage orders = new OrdersPage(driver).open(BASE_URL);
         orders.clickAddItem().selectFirstMenuItem().confirmAddItem();
-        
+
         String menuItemId = OrderTestHelper.getFirstMenuItemId(token);
         for(int i = 0; i < 20; i++) {
             OrderTestHelper.addItem(token, orderId, menuItemId, userId);
         }
-        
+
         driver.navigate().refresh();
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         boolean currencyVisible = wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), "R$"));

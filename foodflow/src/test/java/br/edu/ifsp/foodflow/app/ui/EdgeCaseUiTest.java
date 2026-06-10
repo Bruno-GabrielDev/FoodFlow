@@ -1,7 +1,6 @@
 package br.edu.ifsp.foodflow.app.ui;
 
 import br.edu.ifsp.foodflow.app.annotation.UiTest;
-import br.edu.ifsp.foodflow.app.ui.pages.DashboardPage;
 import br.edu.ifsp.foodflow.app.ui.pages.LoginPage;
 import br.edu.ifsp.foodflow.app.ui.pages.OrdersPage;
 import br.edu.ifsp.foodflow.app.ui.pages.RegisterPage;
@@ -25,9 +24,6 @@ import java.util.UUID;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Testes de UI focados em casos de borda (boundary cases) e valores extremos.
- */
 @DisplayName("Testes de UI - Casos de Borda")
 class EdgeCaseUiTest extends BaseWebTest {
 
@@ -102,8 +98,7 @@ class EdgeCaseUiTest extends BaseWebTest {
         String specialText = "áéíóú çãñ < > & ' \"";
         OrdersPage orders = new OrdersPage(driver);
         orders.clickAddItem().selectFirstMenuItem().fillObservations(specialText).confirmAddItem();
-        
-        // Verifica se houve erro visual na UI (modal não fechou)
+
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
         boolean modalClosed = wait.until(ExpectedConditions.invisibilityOfElementLocated(By.xpath("//h3[contains(.,'Adicionar Item')]")));
         assertTrue(modalClosed, "FALHA DE UI: O modal não fechou ao usar acentuação, indicando erro de processamento no Frontend.");
@@ -149,20 +144,50 @@ class EdgeCaseUiTest extends BaseWebTest {
         String text256 = "a".repeat(256);
         OrdersPage orders = new OrdersPage(driver);
         orders.clickAddItem().selectFirstMenuItem().fillObservations(text256).confirmAddItem();
-        // O teste aceita se o sistema cortar (modal fecha) ou avisar erro. Só não pode congelar.
-        assertTrue(true); 
+
+        boolean alertaDeErro = false;
+        try {
+            new WebDriverWait(driver, Duration.ofSeconds(3))
+                    .until(ExpectedConditions.alertIsPresent()).accept();
+            alertaDeErro = true;
+        } catch (Exception semAlerta) {
+
+        }
+        assertTrue(alertaDeErro || orders.isAddItemModalVisible(),
+                "Com 256 caracteres o sistema deveria sinalizar erro ou manter o modal aberto (estouro de VARCHAR(255)), em vez de aceitar silenciosamente.");
     }
 
     @UiTest
-    @DisplayName("UI 61: Deve rejeitar abertura de comanda com nome de cliente excessivamente longo (256+)")
-    void shouldRejectExtremelyLongCustomerName() {
-        DashboardPage dashboard = new DashboardPage(driver).open(BASE_URL);
-        dashboard.filterByAvailable().clickFirstAvailableTable();
-        
-        // Simula preenchimento de um nome gigante no campo de nome (ajustar se houver o campo na sua UI)
-        // Se a sua UI não pede nome ao abrir mesa, este teste valida o limite do backend via trigger da UI
-        dashboard.confirmOpenOrder();
-        
-        assertTrue(dashboard.urlContains("/orders"), "A UI deve gerenciar o limite de caracteres ao abrir mesa");
+    @DisplayName("UI 61: Deve fechar comanda com exatamente 1 pessoa (limite mínimo válido)")
+    void shouldCloseOrderWithExactlyOnePerson() {
+        OrdersPage orders = new OrdersPage(driver);
+        orders.clickAddItem().selectFirstMenuItem().confirmAddItem();
+        orders.clickCloseOrder().fillPeopleCount("1");
+
+        assertTrue(orders.isConfirmCloseEnabled(), "O botão confirmar deveria estar habilitado para 1 pessoa (mínimo válido)");
+        orders.confirmCloseOrder();
+        assertTrue(orders.isCloseSuccessVisible(), "Deveria fechar a comanda com sucesso com exatamente 1 pessoa");
+    }
+
+    @UiTest
+    @DisplayName("UI 68: Deve aceitar cadastro com username de exatamente 255 caracteres (limite da coluna)")
+    void shouldAcceptUsernameWith255Chars() {
+        String username255 = "u".repeat(255);
+        RegisterPage register = new RegisterPage(driver).open(BASE_URL);
+        register.register("Nome Teste", username255,
+                UUID.randomUUID().toString().substring(0, 8) + "@test.com", "senha123", "WAITER");
+        assertTrue(register.urlContains("/login"),
+                "Username com 255 caracteres (limite de VARCHAR(255)) deveria ser aceito e redirecionar ao login");
+    }
+
+    @UiTest
+    @DisplayName("UI 69: Deve rejeitar cadastro com username de 256 caracteres (estouro de VARCHAR(255))")
+    void shouldRejectUsernameWith256Chars() {
+        String username256 = "u".repeat(256);
+        RegisterPage register = new RegisterPage(driver).open(BASE_URL);
+        register.register("Nome Teste", username256,
+                UUID.randomUUID().toString().substring(0, 8) + "@test.com", "senha123", "WAITER");
+        assertTrue(register.isAtRegisterPage() || register.urlContains("/register"),
+                "Username com 256 caracteres deveria ser rejeitado (permanecer no cadastro)");
     }
 }

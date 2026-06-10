@@ -6,20 +6,23 @@ import br.edu.ifsp.foodflow.app.ui.pages.LoginPage;
 import br.edu.ifsp.foodflow.app.util.UiTestHelper;
 import org.junit.jupiter.api.DisplayName;
 import org.openqa.selenium.Dimension;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
+
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Testes de UI focados em responsividade.
- * Verificam o comportamento do frontend em diferentes tamanhos de viewport:
- * mobile (375x667 ~ iPhone SE), tablet (768x1024 ~ iPad) e desktop (1920x1080).
- */
 @DisplayName("Testes de UI - Responsividade")
 class ResponsiveUiTest extends BaseWebTest {
 
     private static final Dimension MOBILE = new Dimension(375, 667);
     private static final Dimension TABLET = new Dimension(768, 1024);
     private static final Dimension DESKTOP = new Dimension(1920, 1080);
+
+    private static final Dimension MIN_VIEWPORT = new Dimension(320, 480);
+    private static final Dimension MAX_VIEWPORT = new Dimension(2560, 1440);
 
     @UiTest
     @DisplayName("UI 45: Login deve ser renderizado e usável em viewport mobile (375x667)")
@@ -84,5 +87,48 @@ class ResponsiveUiTest extends BaseWebTest {
         assertTrue(dashboard.isAtDashboardPage(), "Dashboard deveria continuar acessível após mudar para mobile");
         driver.manage().window().setSize(TABLET);
         assertTrue(dashboard.isAtDashboardPage(), "Dashboard deveria continuar acessível após mudar para tablet");
+    }
+
+    @UiTest
+    @DisplayName("UI 66: Deve renderizar login e dashboard no viewport MÍNIMO (320x480)")
+    void shouldRenderOnMinimumViewport() {
+
+        WebDriver headless = newHeadlessDriver(MIN_VIEWPORT);
+        try {
+            LoginPage login = new LoginPage(headless).open(BASE_URL);
+            assertTrue(login.isAtLoginPage(), "O login deveria renderizar no viewport mínimo (320px)");
+
+            UiTestHelper.loginViaUi(headless, BASE_URL);
+            assertTrue(new DashboardPage(headless).countVisibleTables() > 0,
+                    "As mesas deveriam ser listadas no viewport mínimo (320px)");
+        } finally {
+            headless.quit();
+        }
+    }
+
+    @UiTest
+    @DisplayName("UI 67: Deve renderizar login e dashboard no viewport MÁXIMO (2560x1440)")
+    void shouldRenderOnMaximumViewport() {
+        WebDriver headless = newHeadlessDriver(MAX_VIEWPORT);
+        try {
+            LoginPage login = new LoginPage(headless).open(BASE_URL);
+            assertTrue(login.isAtLoginPage(), "O login deveria renderizar no viewport máximo (2560px)");
+
+            UiTestHelper.loginViaUi(headless, BASE_URL);
+            assertTrue(new DashboardPage(headless).countVisibleTables() > 0,
+                    "As mesas deveriam ser listadas no viewport máximo (2560px)");
+        } finally {
+            headless.quit();
+        }
+    }
+
+    private WebDriver newHeadlessDriver(Dimension size) {
+        FirefoxOptions options = new FirefoxOptions();
+        options.addArguments("-headless");
+        options.addArguments("--width=" + size.getWidth(), "--height=" + size.getHeight());
+        WebDriver d = new FirefoxDriver(options);
+        d.manage().window().setSize(size);
+        d.manage().timeouts().implicitlyWait(Duration.ofSeconds(2));
+        return d;
     }
 }

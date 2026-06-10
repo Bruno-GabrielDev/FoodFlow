@@ -1,6 +1,5 @@
 package br.edu.ifsp.foodflow.app.application.useCases.order;
 
-
 import br.edu.ifsp.foodflow.app.domain.exceptions.EmptyOrderException;
 import br.edu.ifsp.foodflow.app.domain.menuItem.MenuItem;
 import br.edu.ifsp.foodflow.app.domain.order.Order;
@@ -30,7 +29,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 
 @Tag("UnitTest")
 @ExtendWith(MockitoExtension.class)
@@ -105,7 +103,6 @@ public class CloseOrderUseCaseTest {
             assertThatExceptionOfType(EmptyOrderException.class).isThrownBy(() -> closeOrderUseCase.closeOrder(randomUUID, 2));
         }
 
-
         @ParameterizedTest(name = "[{index}]: número de pessoas igual a {0} should throws IllegalArgumentException")
         @ValueSource(ints = {-1, 0})
         @DisplayName("Dado que a comanda está aberta e o número de pessoas informado para divisão da conta é zero" +
@@ -150,7 +147,6 @@ public class CloseOrderUseCaseTest {
             assertThat(closeOrderResponse.totalWithDiscount()).isEqualTo(totalWithDiscount);
 
         }
-
 
         @Test
         @DisplayName("Dado que a comanda está aberta e o total está entre R$ 200,00 e R$ 249,99, quando o cliente fechar " +
@@ -266,7 +262,6 @@ public class CloseOrderUseCaseTest {
             assertThat(closeOrderResponse.totalWithoutDiscount()).isEqualTo(total);
             assertThat(closeOrderResponse.discountPercentage()).isEqualTo(discount);
             assertThat(closeOrderResponse.totalWithDiscount()).isEqualTo(totalWithDiscount);
-
 
         }
         @Test

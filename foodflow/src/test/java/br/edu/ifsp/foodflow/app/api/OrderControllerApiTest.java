@@ -19,24 +19,14 @@ import static org.hamcrest.Matchers.*;
 @DisplayName("Testes de API - OrderController")
 class OrderControllerApiTest extends BaseApiTest {
 
-    /**
-     * Registra as comandas abertas durante os testes para limpeza posterior.
-     * Cada entrada guarda o token e o orderId.
-     */
     private final List<String[]> openedOrders = new ArrayList<>();
 
-    /**
-     * Abre uma comanda e registra para limpeza automática no final do teste.
-     */
     private String openOrderTracked(AuthenticatedUser user, int table) {
         String orderId = OrderTestHelper.openOrder(user.token(), table, user.userId());
         openedOrders.add(new String[]{user.token(), orderId});
         return orderId;
     }
 
-    /**
-     * Após cada teste, fecha todas as comandas abertas para liberar as mesas.
-     */
     @AfterEach
     void cleanupOpenedOrders() {
         for (String[] order : openedOrders) {

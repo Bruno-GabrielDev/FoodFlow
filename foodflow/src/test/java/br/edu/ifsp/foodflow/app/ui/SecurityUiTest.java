@@ -1,5 +1,6 @@
 package br.edu.ifsp.foodflow.app.ui;
 
+import br.edu.ifsp.foodflow.app.annotation.IssueTest;
 import br.edu.ifsp.foodflow.app.annotation.UiTest;
 import br.edu.ifsp.foodflow.app.ui.pages.LoginPage;
 import br.edu.ifsp.foodflow.app.ui.pages.OrdersPage;
@@ -12,19 +13,22 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.FluentWait;
 
+import java.time.Duration;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Testes de UI focados em segurança e controle de acesso.
- * Verificam se o frontend protege rotas privadas e se comporta corretamente
- * em cenários de sessão inválida, token manipulado, logout e ataques de injeção.
- */
 @DisplayName("Testes de UI - Segurança e Controle de Acesso")
 class SecurityUiTest extends BaseWebTest {
+
+    private static final Duration VIS = Duration.ofSeconds(4);
+    private static final Duration VIS_LONGA = Duration.ofSeconds(7);
 
     private String token;
     private String orderId;
@@ -106,7 +110,7 @@ class SecurityUiTest extends BaseWebTest {
 
         ordersPage.clickAddItem().selectFirstMenuItem().fillObservations(doomPayload).confirmAddItem();
         ordersPage.clickDetails();
-        
+
         int iframesCount = driver.findElements(By.tagName("iframe")).size();
         assertEquals(0, iframesCount, "O sistema renderizou o iframe do Doom! Vulnerabilidade detectada.");
     }
@@ -150,7 +154,7 @@ class SecurityUiTest extends BaseWebTest {
         Response loginB = given().contentType(ContentType.JSON)
                 .body(Map.of("username", waiterBData.username(), "password", waiterBData.password()))
                 .when().post("/auth/login").then().extract().response();
-        
+
         String tokenB = loginB.path("token");
         String userIdB = loginB.path("userId");
 
@@ -159,9 +163,93 @@ class SecurityUiTest extends BaseWebTest {
                 .when().post("/orders/" + orderIdA + "/items");
 
         assertNotEquals(201, attack.getStatusCode(), "VULNERABILIDADE DETECTADA: Garçom B conseguiu manipular comanda do Garçom A!");
-        
+
         OrderTestHelper.addItem(waiterA.token(), orderIdA, OrderTestHelper.getFirstMenuItemId(waiterA.token()), waiterA.userId());
         given().header("Authorization", "Bearer " + waiterA.token()).contentType(ContentType.JSON).body(Map.of("numberOfPeople", 1)).post("/orders/" + orderIdA + "/close");
+    }
+
+    @UiTest
+    @IssueTest
+    @DisplayName("UI 62: IDOR - garçom B insere item na comanda do garçom A (demonstração ISSUE-01)")
+    void shouldDemonstrateIdorByInjectingItemInAnotherWaitersOrder() {
+        final By itemAlterado = By.xpath("//p[contains(.,'<ALTERADO>')]");
+
+        AuthHelper.RegisteredUser garcomA = AuthHelper.registerWaiter();
+        Response rA = loginApi(garcomA);
+        String tokenA = rA.path("token"), userIdA = rA.path("userId");
+        String orderIdA = OrderTestHelper.openOrder(tokenA, OrderTestHelper.getAvailableTableNumber(tokenA), userIdA);
+        String menuItemId = OrderTestHelper.getFirstMenuItemId(tokenA);
+        adicionarItemComObservacao(tokenA, orderIdA, menuItemId, userIdA, "Pedido original do Garcom A");
+
+        logarComoUI(garcomA);
+        driver.navigate().to(BASE_URL + "/orders");
+        esperarComandaRenderizar();
+        visualizar(VIS_LONGA);
+
+        AuthHelper.RegisteredUser garcomB = AuthHelper.registerWaiter();
+        Response rB = loginApi(garcomB);
+        String tokenB = rB.path("token"), userIdB = rB.path("userId");
+        logarComoUI(garcomB);
+        driver.navigate().to(BASE_URL + "/orders");
+        esperarComandaRenderizar();
+        visualizar(VIS);
+
+        Response ataque = adicionarItemComObservacao(
+                tokenB, orderIdA, menuItemId, userIdB, "<ALTERADO> item inserido pelo Garcom B via IDOR");
+
+        driver.navigate().to(BASE_URL + "/orders");
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(10))
+                .pollingEvery(Duration.ofMillis(500))
+                .ignoring(NoSuchElementException.class)
+                .until(ExpectedConditions.visibilityOfElementLocated(itemAlterado));
+        visualizar(VIS_LONGA);
+
+        logarComoUI(garcomA);
+        driver.navigate().to(BASE_URL + "/orders");
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(10))
+                .pollingEvery(Duration.ofMillis(500))
+                .ignoring(NoSuchElementException.class)
+                .until(ExpectedConditions.visibilityOfElementLocated(itemAlterado));
+        visualizar(VIS_LONGA);
+
+        assertNotEquals(201, ataque.getStatusCode(), "VULNERABILIDADE (IDOR): O garçom B manipulou a comanda do garçom A!");
+        OrderTestHelper.closeOrderSafely(tokenA, orderIdA);
+    }
+
+    private void logarComoUI(AuthHelper.RegisteredUser u) {
+        driver.get(BASE_URL + "/login");
+        ((JavascriptExecutor) driver).executeScript("window.localStorage.clear();");
+        driver.navigate().refresh();
+        LoginPage login = new LoginPage(driver);
+        login.login(u.username(), u.password());
+        login.urlContains("/dashboard");
+    }
+
+    private void esperarComandaRenderizar() {
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(10))
+                .pollingEvery(Duration.ofMillis(500))
+                .ignoring(NoSuchElementException.class)
+                .until(ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//h4[contains(text(),'Itens da Comanda')]")));
+    }
+
+    private Response loginApi(AuthHelper.RegisteredUser u) {
+        return given().contentType(ContentType.JSON)
+                .body(Map.of("username", u.username(), "password", u.password()))
+                .when().post("/auth/login").then().statusCode(200).extract().response();
+    }
+
+    private Response adicionarItemComObservacao(String token, String orderId, String menuItemId, String waiterId, String obs) {
+        return given().header("Authorization", "Bearer " + token).contentType(ContentType.JSON)
+                .body(Map.of("menuItemId", menuItemId, "waiterId", waiterId, "observations", obs))
+                .when().post("/orders/" + orderId + "/items");
+    }
+
+    private void visualizar(Duration tempo) {
+        new Actions(driver).pause(tempo).perform();
     }
 
     @AfterEach

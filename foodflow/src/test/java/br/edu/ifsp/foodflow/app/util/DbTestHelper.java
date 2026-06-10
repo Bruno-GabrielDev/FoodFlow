@@ -8,24 +8,12 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 
-/**
- * Utilitário para resetar o banco de dados durante os testes.
- * Lê as credenciais do application.properties (com fallback para os padrões),
- * para evitar falhas de autenticação, executa o Flyway clean+migrate e, em
- * seguida, remove as comandas-semente, deixando um baseline determinístico para
- * os testes de UI: schema + dados de referência (usuários, mesas, cardápio,
- * adicionais), porém SEM comandas ativas.
- */
 public class DbTestHelper {
 
     private static final String DEFAULT_URL = "jdbc:postgresql://localhost:5433/foodflow";
     private static final String DEFAULT_USER = "postgres";
     private static final String DEFAULT_PASS = "postgres";
 
-    /**
-     * Reseta o banco de dados: apaga tudo, recria as tabelas e limpa as comandas-semente.
-     * Requer que o banco de dados esteja acessível em localhost:5433.
-     */
     public static void resetDatabase() {
         String url = DEFAULT_URL;
         String user = DEFAULT_USER;
@@ -50,7 +38,7 @@ public class DbTestHelper {
             System.out.println("--- Resetando Banco de Dados (" + url + ") ---");
             Flyway flyway = Flyway.configure()
                     .dataSource(url, user, pass)
-                    .cleanDisabled(false) // Permite o comando clean
+                    .cleanDisabled(false)
                     .locations("classpath:db/migration")
                     .load();
 
@@ -64,14 +52,10 @@ public class DbTestHelper {
         }
     }
 
-    /**
-     * Remove todas as comandas (pedidos) semeadas pelas migrações e libera as mesas,
-     * para que cada classe de teste de UI comece sem comandas ativas.
-     */
     private static void clearOrders(String url, String user, String pass) throws Exception {
         try (Connection conn = DriverManager.getConnection(url, user, pass);
              Statement st = conn.createStatement()) {
-            // Ordem respeita as foreign keys: addons -> itens -> comandas.
+
             st.executeUpdate("DELETE FROM order_item_addons");
             st.executeUpdate("DELETE FROM order_items");
             st.executeUpdate("DELETE FROM orders");
