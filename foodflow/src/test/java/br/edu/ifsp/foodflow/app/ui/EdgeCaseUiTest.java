@@ -192,4 +192,30 @@ class EdgeCaseUiTest extends BaseWebTest {
         assertTrue(register.isAtRegisterPage() || register.urlContains("/register"),
                 "Username com 256 caracteres deveria ser rejeitado (permanecer no cadastro)");
     }
+
+    @UiTest
+    @IssueTest
+    @DisplayName("UI 72: Fechar comanda sem itens causa erro no sistema (ISSUE-06)")
+    void shouldFailWhenClosingOrderWithoutItems() {
+        OrdersPage orders = new OrdersPage(driver);
+
+        orders.clickCloseOrder().fillPeopleCount("2");
+        new Actions(driver).pause(Duration.ofSeconds(4)).perform();
+
+        orders.confirmCloseOrder();
+
+        boolean alertaDeErro;
+        try {
+            new WebDriverWait(driver, Duration.ofSeconds(5))
+                    .until(ExpectedConditions.alertIsPresent()).accept();
+            alertaDeErro = true;
+        } catch (Exception e) {
+            alertaDeErro = false;
+        }
+
+        new Actions(driver).pause(Duration.ofSeconds(4)).perform();
+        assertFalse(alertaDeErro,
+                "BUG: O sistema gerou erro ao tentar fechar uma comanda sem itens. "
+                + "Deveria impedir o fechamento com uma mensagem amigável ou desabilitar o botão.");
+    }
 }
