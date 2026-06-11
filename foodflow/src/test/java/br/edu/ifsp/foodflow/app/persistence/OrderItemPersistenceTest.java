@@ -1,6 +1,8 @@
 package br.edu.ifsp.foodflow.app.persistence;
 
 import br.edu.ifsp.foodflow.app.annotation.PersistenceTest;
+import br.edu.ifsp.foodflow.app.domain.menuItem.MenuItem;
+import br.edu.ifsp.foodflow.app.domain.menuItem.MenuItemRepository;
 import br.edu.ifsp.foodflow.app.domain.order.OrderRepository;
 import br.edu.ifsp.foodflow.app.domain.orderItem.OrderItemStatus;
 import br.edu.ifsp.foodflow.app.infra.persistence.entity.AddOnJpaEntity;
@@ -14,7 +16,6 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -66,7 +67,7 @@ class OrderItemPersistenceTest extends BasePersistenceTest {
     private OrderRepository domainOrderRepository;
 
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private MenuItemRepository domainMenuItemRepository;
 
     @PersistenceTest
     @Transactional
@@ -181,18 +182,21 @@ class OrderItemPersistenceTest extends BasePersistenceTest {
         double historicalPrice = 44.90;
         double updatedMenuItemPrice = 50.00;
 
-        jdbcTemplate.update(
-                "UPDATE menu_items SET price = ? WHERE id = ?",
+        var menuItem = domainMenuItemRepository.findById(MENU_ITEM_ID)
+                .orElseThrow();
+        domainMenuItemRepository.save(new MenuItem(
+                menuItem.getId(),
+                menuItem.getName(),
+                menuItem.getDescription(),
                 updatedMenuItemPrice,
-                MENU_ITEM_ID
-        );
+                menuItem.getAvailableQuantity()
+        ));
+        entityManager.flush();
         entityManager.clear();
 
-        Double storedPrice = jdbcTemplate.queryForObject(
-                "SELECT price FROM order_items WHERE id = ?",
-                Double.class,
-                PRICED_ORDER_ITEM_ID
-        );
+        double storedPrice = orderItemRepository.findById(PRICED_ORDER_ITEM_ID)
+                .orElseThrow()
+                .getPrice();
         var reloadedOrder = domainOrderRepository.findById(ORDER_WITH_PRICED_ITEM_ID)
                 .orElseThrow();
         var reloadedOrderItem = reloadedOrder.getOrderItems().stream()
