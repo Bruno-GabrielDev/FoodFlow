@@ -1,5 +1,6 @@
 package br.edu.ifsp.foodflow.app.ui;
 
+import br.edu.ifsp.foodflow.app.annotation.IssueTest;
 import br.edu.ifsp.foodflow.app.annotation.UiTest;
 import br.edu.ifsp.foodflow.app.ui.pages.LoginPage;
 import br.edu.ifsp.foodflow.app.ui.pages.OrdersPage;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -130,22 +132,31 @@ class EdgeCaseUiTest extends BaseWebTest {
     }
 
     @UiTest
-    @DisplayName("UI 58: Deve tratar adequadamente observação com 256 caracteres (estouro de limite)")
+    @IssueTest
+    @DisplayName("UI 58: Observação com 256 caracteres causa HTTP 500 - estouro de VARCHAR(255) (ISSUE-02)")
     void shouldHandle256CharObservation() {
-        String text256 = "a".repeat(256);
         OrdersPage orders = new OrdersPage(driver);
-        orders.clickAddItem().selectFirstMenuItem().fillObservations(text256).confirmAddItem();
+        orders.clickAddItem().selectFirstMenuItem();
 
-        boolean alertaDeErro = false;
+        String text256 = "a".repeat(256);
+        orders.fillObservations(text256);
+        new Actions(driver).pause(Duration.ofSeconds(5)).perform();
+
+        orders.confirmAddItem();
+
+        boolean alertaDeErro;
         try {
-            new WebDriverWait(driver, Duration.ofSeconds(3))
+            new WebDriverWait(driver, Duration.ofSeconds(5))
                     .until(ExpectedConditions.alertIsPresent()).accept();
             alertaDeErro = true;
-        } catch (Exception semAlerta) {
-
+        } catch (Exception e) {
+            alertaDeErro = false;
         }
-        assertTrue(alertaDeErro || orders.isAddItemModalVisible(),
-                "Com 256 caracteres o sistema deveria sinalizar erro ou manter o modal aberto (estouro de VARCHAR(255)), em vez de aceitar silenciosamente.");
+
+        new Actions(driver).pause(Duration.ofSeconds(4)).perform();
+        assertFalse(alertaDeErro,
+                "BUG: O backend rejeitou a observação com 256 caracteres (HTTP 500 por estouro de VARCHAR(255)). "
+                + "O sistema deveria aceitar ou validar no frontend antes de enviar.");
     }
 
     @UiTest

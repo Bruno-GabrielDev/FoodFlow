@@ -178,31 +178,6 @@ class OrdersUiTest extends BaseWebTest {
 
     @UiTest
     @IssueTest
-    @DisplayName("UI 63: Observação acima de 255 caracteres falha ao lançar - HTTP 500 (demonstração ISSUE-02)")
-    void shouldFailWhenObservationExceeds255Chars() {
-        OrdersPage orders = new OrdersPage(driver).open(BASE_URL);
-        orders.clickAddItem().selectFirstMenuItem();
-
-        String observacaoLonga = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ".repeat(10);
-        orders.fillObservations(observacaoLonga);
-        visualizar(VIS_LONGA);
-
-        orders.confirmAddItem();
-
-        boolean alertaDeErro;
-        try {
-            new WebDriverWait(driver, Duration.ofSeconds(5)).until(ExpectedConditions.alertIsPresent()).accept();
-            alertaDeErro = true;
-        } catch (Exception e) {
-            alertaDeErro = false;
-        }
-
-        visualizar(VIS);
-        assertFalse(alertaDeErro, "BUG: O sistema rejeitou a observação longa (> 255 chars).");
-    }
-
-    @UiTest
-    @IssueTest
     @DisplayName("UI 22: Observação longa sem espaços transborda o card - layout (ISSUE-04)")
     void shouldOverflowCardWithLongUnbrokenObservation() {
         String menuItemId = OrderTestHelper.getFirstMenuItemId(token);
