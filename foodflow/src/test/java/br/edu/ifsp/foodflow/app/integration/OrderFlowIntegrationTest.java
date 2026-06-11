@@ -400,6 +400,102 @@ class OrderFlowIntegrationTest {
     }
 
     @IntegrationTest
+    @DisplayName("Adicionais devem aparecer nos detalhes e compor o total do fechamento")
+    void shouldIncludeAddOnsInOrderDetailsAndClosingTotal() {
+        int table = OrderTestHelper.getAvailableTableNumber(token);
+        orderId = OrderTestHelper.openOrder(token, table, userId);
+
+        Response menuItemResponse = given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/menu/items")
+                .then()
+                .statusCode(200)
+                .body("$", not(empty()))
+                .extract()
+                .response();
+        String menuItemId = menuItemResponse.path("[0].id");
+        double menuItemPrice = ((Number) menuItemResponse.path("[0].price")).doubleValue();
+
+        Response addOnResponse = given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/menu/addons")
+                .then()
+                .statusCode(200)
+                .body("$", not(empty()))
+                .extract()
+                .response();
+        String addOnId = addOnResponse.path("[0].id");
+        String addOnName = addOnResponse.path("[0].name");
+        double addOnPrice = ((Number) addOnResponse.path("[0].price")).doubleValue();
+        double expectedTotal = menuItemPrice + addOnPrice;
+
+        Response addItemResponse = given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(Map.of(
+                        "menuItemId", menuItemId,
+                        "waiterId", userId,
+                        "addOnIds", List.of(addOnId)
+                ))
+                .when()
+                .post("/orders/" + orderId + "/items")
+                .then()
+                .statusCode(201)
+                .extract()
+                .response();
+
+        assertEquals(
+                expectedTotal,
+                ((Number) addItemResponse.path("total")).doubleValue(),
+                0.001
+        );
+
+        Response orderDetailsResponse = given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/orders/tables/" + table + "/order")
+                .then()
+                .statusCode(200)
+                .body("items", hasSize(1))
+                .body("items[0].additions", hasSize(1))
+                .body("items[0].additions[0].name", equalTo(addOnName))
+                .extract()
+                .response();
+
+        assertEquals(
+                expectedTotal,
+                ((Number) orderDetailsResponse.path("items[0].price")).doubleValue(),
+                0.001
+        );
+        assertEquals(
+                addOnPrice,
+                ((Number) orderDetailsResponse.path("items[0].additions[0].price")).doubleValue(),
+                0.001
+        );
+
+        Response closeOrderResponse = given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(Map.of("numberOfPeople", 1))
+                .when()
+                .post("/orders/" + orderId + "/close")
+                .then()
+                .statusCode(200)
+                .extract()
+                .response();
+
+        assertEquals(
+                expectedTotal,
+                ((Number) closeOrderResponse.path("totalWithoutDiscount")).doubleValue(),
+                0.001
+        );
+
+        orderId = null;
+    }
+
+    @IntegrationTest
     @DisplayName("Fluxo de cálculo: comanda com subtotal baixo (< R$100) não recebe desconto")
     void shouldApplyZeroDiscountForLowSubtotal() {
         int table = OrderTestHelper.getAvailableTableNumber(token);
